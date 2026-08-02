@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5 — 2026-08-02
+
+### Ajouté
+- `conversation_test.py --duration <minutes>` : limite une session par durée plutôt que par nombre de tours fixe, sans couper le tour en cours d'OpenCode ; `--turns` devient illimité par défaut si utilisé seul avec `--duration`.
+- Commande Claude Code `/stop_opencode` : arrête proprement une session `conversation_test.py`/`workflow_test.py` interrompue de force (reconstruction du `manifest.json`, nettoyage des flags de contrôle).
+
 ## v0.4 — 2026-08-02
 
 ### Corrigé
