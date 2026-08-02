@@ -3,4 +3,4 @@
 | Alias | Dossier |
 |-------|---------|
 | roberto | D:\ServOMorph\Roberto |
-| opencode | D:\ServOMorph\Roberto\OPENCODE |
+| opencode | D:\ServOMorph\Roberto\_zones\OPENCODE |

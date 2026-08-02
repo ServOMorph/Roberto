@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.pytest_cache/
 data/
 _workflow_test/
 vendor/proxy_tools/build/

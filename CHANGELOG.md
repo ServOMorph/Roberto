@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.7 — 2026-08-02
+
+### Ajouté
+- Package `agents/` : un `AgentProfile` décrit entièrement un agent pilotable (macro d'envoi, zone OCR de contexte, sens de lecture du pourcentage, commande et accusé de compactage). Registre dans `agents/__init__.py`, accès par `agents.get(<clé>)`. Seul le profil `opencode` est implémenté.
+- Option `--agent <clé>` sur tous les scripts de pilotage ; options `--project` et `--roadmap` sur `scripts.conversation`.
+- Suite de tests `tests/` (123 tests, `py -m pytest`) : OCR, touches, capture d'écran, stores, flags de contrôle, protocole de fichiers du pont, prompts, registre d'agents, importabilité de tous les modules.
+
+### Modifié
+- Restructuration complète en packages : `macrodesk/` (moteur, stores, OCR, écran, UI), `bridge/` (pont générique agnostique de l'agent), `agents/`, `scripts/`, `tests/`, `docs/`. La racine ne conserve que `run.py`, `ollama_call.py` et les fichiers de configuration.
+- Scripts renommés et déplacés : `workflow_test.py` → `scripts/workflow_check.py`, `conversation_test.py` → `scripts/conversation.py`, `context_watch_test.py` → `scripts/context_watch.py`, `ocr_reliability_test.py` → `scripts/ocr_reliability.py`. Lancement par `py -m scripts.<nom>`.
+- `compact_opencode()` devient `bridge.compact_agent()`, paramétré par le profil de l'agent.
+- `MacroStore` et `ZoneStore` acceptent leur emplacement en paramètre ; `MacroStore.find_by_name()` remplace la recherche dupliquée dans les scripts.
+- Ouverture et fermeture d'une session de contrôle factorisées dans `scripts.common.controlled_session()` (drapeau de session, écoute d'Échap, arrêt des listeners).
+- `ui/` déplacé dans `macrodesk/ui/`, `WORKFLOW_OPENCODE.md` dans `docs/workflow_opencode.md`, `_docs/` fusionné dans `docs/`, zone vibecoding `OPENCODE/` déplacée dans `_zones/OPENCODE/` (alias `zones.md` inchangé).
+
 ## v0.6 — 2026-08-02
 
 ### Ajouté

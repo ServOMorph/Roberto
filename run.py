@@ -3,7 +3,7 @@
 Lancer avec : ``py run.py``
 """
 
-from app import main
+from macrodesk.app import main
 
 
 if __name__ == "__main__":

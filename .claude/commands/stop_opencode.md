@@ -1,5 +1,5 @@
 ---
-description: Arrête proprement le workflow de communication avec OpenCode (conversation_test.py / workflow_test.py) et journalise l'état pour une reprise ultérieure
+description: Arrête proprement le workflow de communication avec OpenCode (scripts/conversation.py / scripts/workflow_check.py) et journalise l'état pour une reprise ultérieure
 argument-hint: [id de tâche de fond]
 model: sonnet
 allowed-tools: Bash(*), TaskOutput, TaskStop
@@ -8,7 +8,7 @@ allowed-tools: Bash(*), TaskOutput, TaskStop
 # /stop_opencode [id de tâche de fond]
 
 ## Objectif
-Arrêter une session `conversation_test.py` ou `workflow_test.py` en cours (prise de
+Arrêter une session `scripts/conversation.py` ou `scripts/workflow_check.py` en cours (prise de
 contrôle machine vers OpenCode) sans perte d'information : contrairement à un arrêt via
 Échap (qui déclenche le `finally` du script et journalise proprement), un arrêt externe
 du process contourne ce nettoyage. Cette commande le fait manuellement à la place.
@@ -18,7 +18,7 @@ du process contourne ce nettoyage. Cette commande le fait manuellement à la pla
 1. Identifier la session en cours :
    - Si un argument (id de tâche) est fourni ($ARGUMENTS), l'utiliser directement.
    - Sinon, lister les tâches de fond actives et repérer celle dont la commande contient
-     `conversation_test.py` ou `workflow_test.py`.
+     `scripts/conversation.py` ou `scripts/workflow_check.py`.
    - Si aucune tâche de fond trouvée : vérifier tout de même l'état des flags
      (`data/control.flag`, `data/control_session.flag` sous `D:\ServOMorph\Roberto`) et le
      dossier de session le plus récent sans `manifest.json` — un process a pu mourir sans
@@ -28,17 +28,17 @@ du process contourne ce nettoyage. Cette commande le fait manuellement à la pla
 2. Arrêter le process :
    - Si une tâche de fond a été identifiée, l'arrêter (`TaskStop`).
    - Ne jamais tuer un process qui ne correspond pas explicitement à
-     `conversation_test.py` ou `workflow_test.py`.
+     `scripts/conversation.py` ou `scripts/workflow_check.py`.
 
 3. Reconstituer l'état de la session interrompue :
-   - **Cas `conversation_test.py`** (dossier `D:\ServOMorph\Ponganoid_v6\_ROBERTO\conversations\`) :
+   - **Cas `scripts/conversation.py`** (dossier `D:\ServOMorph\Ponganoid_v6\_ROBERTO\conversations\`) :
      repérer le sous-dossier `session-<horodatage>` le plus récent sans `manifest.json`.
      Lister les paires `prompt-NN.md` / `reponse-NN.md` ; un tour ne compte comme complété
      que si `reponse-NN.md` existe et n'est pas vide. Écrire `manifest.json` avec :
      `status: "interrompu_manuel"`, `project`, `roadmap` (lus dans `prompt-01.md` ou
      déduits du script), `turnsCompleted`, `responses` (liste `{turn, response}`),
      `turnInterrompu` (numéro du prompt sans réponse correspondante, s'il y en a un).
-   - **Cas `workflow_test.py`** (dossier `D:\ServOMorph\Roberto\_workflow_test\`) :
+   - **Cas `scripts/workflow_check.py`** (dossier `D:\ServOMorph\Roberto\_workflow_test\`) :
      repérer le `*-manifest.json` le plus récent dont `status` vaut encore `"started"` et
      le mettre à jour avec `status: "interrompu_manuel"`.
    - Si aucune session non journalisée n'est trouvée (le script avait déjà écrit son
