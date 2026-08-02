@@ -13,12 +13,15 @@ from typing import Any
 import cv2
 import mss
 import numpy as np
+import pytesseract
 import webview
+from PIL import Image
 from pynput import keyboard, mouse
 
 
 APP_DIR = Path(__file__).resolve().parent
 MACROS_DIR = APP_DIR / "data" / "macros"
+ZONES_FILE = APP_DIR / "data" / "zones.json"
 CONTEXT_WIDTH = 320
 CONTEXT_HEIGHT = 220
 SEARCH_WIDTH = 1100
@@ -123,9 +126,152 @@ class MacroStore:
         return True
 
 
+class ZoneStore:
+    def __init__(self) -> None:
+        ZONES_FILE.parent.mkdir(parents=True, exist_ok=True)
+        if not ZONES_FILE.exists():
+            ZONES_FILE.write_text("[]", encoding="utf-8")
+
+    def list(self) -> list[dict[str, Any]]:
+        try:
+            return json.loads(ZONES_FILE.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return []
+
+    def find(self, zone_id: str) -> dict[str, Any] | None:
+        for zone in self.list():
+            if zone["id"] == zone_id:
+                return zone
+        return None
+
+    def find_by_name(self, name: str) -> dict[str, Any] | None:
+        for zone in self.list():
+            if zone["name"].casefold() == name.casefold():
+                return zone
+        return None
+
+    def save_all(self, zones: list[dict[str, Any]]) -> None:
+        ZONES_FILE.write_text(json.dumps(zones, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def add(self, zone: dict[str, Any]) -> None:
+        zones = self.list()
+        zones.append(zone)
+        self.save_all(zones)
+
+    def rename(self, zone_id: str, name: str) -> None:
+        zones = self.list()
+        for zone in zones:
+            if zone["id"] == zone_id:
+                zone["name"] = safe_name(name)
+        self.save_all(zones)
+
+    def delete(self, zone_id: str) -> bool:
+        zones = self.list()
+        remaining = [zone for zone in zones if zone["id"] != zone_id]
+        if len(remaining) == len(zones):
+            return False
+        self.save_all(remaining)
+        return True
+
+
+def select_zone_rectangle() -> dict[str, int] | None:
+    """Overlay plein écran pour tracer un rectangle à la souris. Bloquant, à lancer hors du thread UI."""
+    import tkinter as tk
+
+    with mss.mss() as capture:
+        virtual = capture.monitors[0]
+
+    result: dict[str, int] | None = None
+    start: dict[str, int] = {}
+    rect_id: int | None = None
+
+    root = tk.Tk()
+    root.overrideredirect(True)
+    root.attributes("-alpha", 0.25)
+    root.attributes("-topmost", True)
+    root.configure(bg="black")
+    # -fullscreen ne couvre que l'écran principal ; on positionne explicitement
+    # la fenêtre sur tout le bureau virtuel (les 3 écrans) via l'API Windows,
+    # car la géométrie Tk ne gère pas les coordonnées négatives multi-écrans.
+    root.geometry(f"{virtual['width']}x{virtual['height']}+0+0")
+    root.update_idletasks()
+    ctypes.windll.user32.MoveWindow(
+        root.winfo_id(), virtual["left"], virtual["top"], virtual["width"], virtual["height"], True
+    )
+    canvas = tk.Canvas(root, cursor="cross", bg="black", highlightthickness=0)
+    canvas.pack(fill="both", expand=True)
+
+    def on_press(event: "tk.Event") -> None:
+        nonlocal rect_id
+        start["x"], start["y"] = event.x_root, event.y_root
+        rect_id = canvas.create_rectangle(event.x, event.y, event.x, event.y, outline="#4ade80", width=2)
+
+    def on_drag(event: "tk.Event") -> None:
+        if rect_id is not None:
+            x0 = start["x"] - root.winfo_rootx()
+            y0 = start["y"] - root.winfo_rooty()
+            canvas.coords(rect_id, x0, y0, event.x, event.y)
+
+    def on_release(event: "tk.Event") -> None:
+        nonlocal result
+        end_x, end_y = event.x_root, event.y_root
+        left, top = min(start["x"], end_x), min(start["y"], end_y)
+        width, height = abs(end_x - start["x"]), abs(end_y - start["y"])
+        if width > 4 and height > 4:
+            result = {"left": int(left), "top": int(top), "width": int(width), "height": int(height)}
+        root.destroy()
+
+    canvas.bind("<ButtonPress-1>", on_press)
+    canvas.bind("<B1-Motion>", on_drag)
+    canvas.bind("<ButtonRelease-1>", on_release)
+    root.bind("<Escape>", lambda _event: root.destroy())
+    root.mainloop()
+    return result
+
+
+OCR_PSM_MODES = ("--psm 7", "--psm 8", "--psm 6")
+OCR_WHITELIST = "-c tessedit_char_whitelist=0123456789%"
+
+
+def extract_percent(text: str) -> int | None:
+    match = re.search(r"(\d{1,3})\s*%", text)
+    if not match:
+        return None
+    value = int(match.group(1))
+    return value if 0 <= value <= 100 else None
+
+
+def preprocess_zone(frame: np.ndarray, invert: bool) -> Image.Image:
+    """Agrandit et binarise une petite zone d'écran pour fiabiliser l'OCR sur du texte minuscule."""
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    scaled = cv2.resize(gray, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+    mode = cv2.THRESH_BINARY_INV if invert else cv2.THRESH_BINARY
+    _, binary = cv2.threshold(scaled, 0, 255, mode + cv2.THRESH_OTSU)
+    return Image.fromarray(binary)
+
+
+def read_zone_text(zone: dict[str, Any]) -> str:
+    """Essaie plusieurs prétraitements/modes Tesseract, retient le premier lisible comme un %."""
+    box = {"left": zone["left"], "top": zone["top"], "width": zone["width"], "height": zone["height"]}
+    frame = grab_bgr(box)
+    fallback = ""
+    for invert in (True, False):
+        image = preprocess_zone(frame, invert)
+        for psm in OCR_PSM_MODES:
+            text = pytesseract.image_to_string(image, config=f"{psm} {OCR_WHITELIST}")
+            if not fallback:
+                fallback = text
+            if extract_percent(text) is not None:
+                return text
+    return fallback
+
+
 class MacroEngine:
     def __init__(self) -> None:
         self.store = MacroStore()
+        self.zone_store = ZoneStore()
+        self.zone_capturing = False
+        self.zone_message = ""
         self.lock = threading.RLock()
         self.status = "ready"
         self.message = "Prêt. Choisissez une action, puis appuyez sur F8."
@@ -278,6 +424,44 @@ class MacroEngine:
                 self.message = "Macro supprimée."
             return self.state()
 
+    def create_zone(self, name: str) -> dict[str, Any]:
+        with self.lock:
+            if self.zone_capturing:
+                return self.state()
+            self.zone_capturing = True
+            self.zone_message = "Tracez la zone à l'écran (Échap pour annuler)…"
+        threading.Thread(target=self.capture_zone, args=(safe_name(name),), daemon=True).start()
+        return self.state()
+
+    def capture_zone(self, name: str) -> None:
+        box = select_zone_rectangle()
+        with self.lock:
+            self.zone_capturing = False
+            if box:
+                self.zone_store.add({"id": uuid.uuid4().hex, "name": name, **box})
+                self.zone_message = f"Zone « {name} » enregistrée."
+            else:
+                self.zone_message = "Capture de zone annulée."
+
+    def rename_zone(self, zone_id: str, name: str) -> dict[str, Any]:
+        with self.lock:
+            self.zone_store.rename(zone_id, name)
+            self.zone_message = "Zone renommée."
+            return self.state()
+
+    def delete_zone(self, zone_id: str) -> dict[str, Any]:
+        with self.lock:
+            if self.zone_store.delete(zone_id):
+                self.zone_message = "Zone supprimée."
+            return self.state()
+
+    def test_zone_ocr(self, zone_id: str) -> dict[str, Any]:
+        zone = self.zone_store.find(zone_id)
+        if not zone:
+            return {"text": "", "percent": None}
+        text = read_zone_text(zone)
+        return {"text": text.strip(), "percent": extract_percent(text)}
+
     def start_current(self) -> None:
         with self.lock:
             if self.status != "ready":
@@ -395,6 +579,9 @@ class MacroEngine:
             "pendingName": self.pending_name,
             "selectedId": self.selected_id,
             "macros": self.store.list(),
+            "zones": self.zone_store.list(),
+            "zoneCapturing": self.zone_capturing,
+            "zoneMessage": self.zone_message,
         }
 
 
@@ -425,6 +612,18 @@ class Api:
 
     def set_ui_bounds(self, left: int, top: int, width: int, height: int) -> None:
         self.engine.set_ui_bounds(int(left), int(top), int(width), int(height))
+
+    def create_zone(self, name: str) -> dict[str, Any]:
+        return self.engine.create_zone(name)
+
+    def rename_zone(self, zone_id: str, name: str) -> dict[str, Any]:
+        return self.engine.rename_zone(zone_id, name)
+
+    def delete_zone(self, zone_id: str) -> dict[str, Any]:
+        return self.engine.delete_zone(zone_id)
+
+    def test_zone_ocr(self, zone_id: str) -> dict[str, Any]:
+        return self.engine.test_zone_ocr(zone_id)
 
 
 def main() -> None:

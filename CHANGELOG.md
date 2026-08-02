@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2 — 2026-08-02
+
+### Ajouté
+- Zones de surveillance OCR dans Macrodesk : sélection par overlay multi-écrans, lecture de pourcentage par Tesseract, gestion CRUD dans l'UI.
+- Options `--watch-zone`/`--watch-threshold` dans `workflow_test.py` et `conversation_test.py` pour bloquer l'envoi d'un prompt si le contexte dépasse le seuil.
+- Scripts `context_watch_test.py` et `ocr_reliability_test.py` pour valider le pont OpenCode et la fiabilité OCR en conditions réelles.
+
+### Corrigé
+- Overlay de sélection de zone limité à l'écran principal -> couvre désormais tout le bureau virtuel (3 écrans).
+- Pipeline OCR peu fiable sur petites zones -> agrandissement, binarisation Otsu, liste de caractères restreinte, essai multi-PSM.
+
 ## v0.1 — 2026-08-02
 
 ### Ajouté

@@ -8,8 +8,18 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import argparse
+
 from app import APP_DIR, MacroEngine
-from workflow_test import find_macro, send_prompt, wait_for_answer, write_text
+from workflow_test import (
+    DEFAULT_WATCH_THRESHOLD,
+    ContextLimitReached,
+    find_macro,
+    find_zone,
+    send_prompt,
+    wait_for_answer,
+    write_text,
+)
 
 
 TIMEOUT_PER_TURN = 180
@@ -54,7 +64,13 @@ Ce fichier est obligatoire ; le prochain tour lira son contenu avant de te répo
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Conversation Macrodesk <-> OpenCode en dix échanges.")
+    parser.add_argument("--watch-zone", default=None, help="nom de la zone Macrodesk à lire par OCR avant chaque envoi")
+    parser.add_argument("--watch-threshold", type=int, default=DEFAULT_WATCH_THRESHOLD, help="pourcentage de contexte au-delà duquel l'envoi est refusé")
+    args = parser.parse_args()
+
     macro = find_macro("opencode-envoyer")
+    watch_zone = find_zone(args.watch_zone) if args.watch_zone else None
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     root = APP_DIR / "_workflow_test" / f"conversation-{stamp}"
     project = root / "python_project"
@@ -69,7 +85,7 @@ def main() -> int:
         for turn in range(1, 11):
             response_file = root / f"reponse-{turn:02d}.md"
             print(f"Tour {turn}/10 — envoi du prompt…", flush=True)
-            send_prompt(engine, macro, prompt_for_turn(turn, project.resolve(), response_file.resolve(), previous_response))
+            send_prompt(engine, macro, prompt_for_turn(turn, project.resolve(), response_file.resolve(), previous_response), watch_zone, args.watch_threshold)
             print(f"Tour {turn}/10 — attente de {response_file.name}…", flush=True)
             previous_response = wait_for_answer(response_file, TIMEOUT_PER_TURN)
             responses.append({"turn": str(turn), "response": previous_response})

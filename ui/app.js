@@ -52,6 +52,47 @@ function render(next) {
   if (macro && document.activeElement !== $('#macro-name')) $('#macro-name').value = macro.name;
   $('#save-name').disabled = active;
   $('#delete-macro').disabled = active;
+
+  $('#new-zone').disabled = state.zoneCapturing;
+  $('#zone-message').textContent = state.zoneMessage || '';
+  const zoneList = $('#zone-list');
+  zoneList.replaceChildren();
+  if (!state.zones.length) {
+    zoneList.innerHTML = '<p class="empty">Aucune zone déclarée.</p>';
+  }
+  state.zones.forEach((zone) => {
+    const row = document.createElement('div');
+    row.className = 'macro-row';
+    const item = document.createElement('div');
+    item.className = 'macro-item';
+    item.innerHTML = `<span>${escapeHtml(zone.name)}</span><small>${zone.width}×${zone.height} px @ (${zone.left}, ${zone.top})</small>`;
+    const test = document.createElement('button');
+    test.className = 'macro-rename';
+    test.title = `Tester l'OCR de ${zone.name}`;
+    test.textContent = 'Tester';
+    test.onclick = async () => {
+      const result = await window.pywebview.api.test_zone_ocr(zone.id);
+      const percent = result.percent === null ? 'aucun %' : `${result.percent}%`;
+      window.alert(`Texte lu (${percent}) :\n\n${result.text || '(vide)'}`);
+    };
+    const rename = document.createElement('button');
+    rename.className = 'macro-rename';
+    rename.title = `Renommer ${zone.name}`;
+    rename.textContent = 'Renommer';
+    rename.onclick = async () => {
+      const name = window.prompt('Nouveau nom de la zone :', zone.name);
+      if (name !== null) render(await window.pywebview.api.rename_zone(zone.id, name));
+    };
+    const remove = document.createElement('button');
+    remove.className = 'macro-rename';
+    remove.title = `Supprimer ${zone.name}`;
+    remove.textContent = 'Supprimer';
+    remove.onclick = async () => {
+      if (window.confirm(`Supprimer la zone « ${zone.name} » ?`)) render(await window.pywebview.api.delete_zone(zone.id));
+    };
+    row.append(item, test, rename, remove);
+    zoneList.append(row);
+  });
 }
 
 function escapeHtml(value) {
@@ -83,6 +124,10 @@ window.addEventListener('pywebviewready', async () => {
   $('#delete-macro').onclick = async () => {
     const macro = selectedMacro();
     if (macro && window.confirm(`Supprimer « ${macro.name} » ?`)) render(await window.pywebview.api.delete_macro(macro.id));
+  };
+  $('#new-zone').onclick = async () => {
+    const name = window.prompt('Nom de la zone :', '');
+    if (name !== null) render(await window.pywebview.api.create_zone(name));
   };
   await refresh();
   setInterval(refresh, 350);

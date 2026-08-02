@@ -5,22 +5,27 @@
 # Session du 2026-08-02
 
 ## Décisions prises
-- Application Windows locale en Python, UI HTML sombre à gauche et macros globales F8/F9.
-- Les clics rejoués exigent une reconnaissance visuelle du contexte avant d'être exécutés.
-- Le pont OpenCode utilise une macro `Ctrl+V` et des réponses-fichiers dans `_workflow_test/`.
+- Ajout de zones de surveillance OCR à Macrodesk pour lire le pourcentage de contexte affiché par OpenCode.
+- Sélection de zone par overlay plein bureau virtuel (les 3 écrans), pas seulement l'écran principal.
+- Arrêt volontaire du travail sur la fiabilité OCR après validation sur une seule valeur de contexte (7 %).
 
 ## Livrables produits ou modifiés
-- Macrodesk : enregistrement/relecture clavier-souris, bibliothèque et renommage fiable.
-- `workflow_test.py` : test de deux échanges avec OpenCode.
-- `conversation_test.py` : conversation validée de 10 échanges autour d'un script Python.
+- `app.py` : `ZoneStore`, overlay de sélection multi-écrans (`select_zone_rectangle`), pipeline OCR renforcé (`read_zone_text`/`extract_percent`), API zones (créer/renommer/supprimer/tester).
+- `ui/index.html`, `ui/app.js` : section « Zones de surveillance » (créer, tester, renommer, supprimer).
+- `workflow_test.py`, `conversation_test.py` : options `--watch-zone`/`--watch-threshold`, arrêt d'envoi via `ContextLimitReached`.
+- `context_watch_test.py`, `ocr_reliability_test.py` : scripts de test en conditions réelles avec OpenCode (exécutés).
+- `requirements.txt` : ajout `pytesseract`, `Pillow`.
+- `tests_manuels.md` : créé, 2 contrôles en attente.
+- `.claude/memory.md` : créé, entrée sur le setup 3 écrans de l'utilisateur.
 
 ## Hypothèses validées / invalidées
-- VALIDE : la macro `opencode-envoyer` injecte des prompts et déclenche l'envoi correctement.
-- VALIDE : OpenCode écrit les réponses attendues dans le dossier partagé ; 10/10 tours réussis.
-- INVALIDE : le caractère de contrôle Windows brut suffit pour `Ctrl+V` -> normalisation vers `v` ajoutée.
+- VALIDE : le pipeline OCR renforcé (agrandissement 4×, binarisation Otsu bidirectionnelle, whitelist, multi-PSM) lit correctement `7%` sur 6/6 lectures consécutives via `ocr_reliability_test.py`.
+- INVALIDE : `-fullscreen` Tk suffit pour l'overlay de sélection de zone -> pivot vers positionnement explicite (`MoveWindow`) sur tout le bureau virtuel.
+- EN ATTENTE : fiabilité OCR sur des valeurs de contexte autres que 7 % — le contexte OpenCode n'a pas varié pendant les tests. Reste dans `tests_manuels.md`.
+- EN ATTENTE : stabilité du clic de la macro `opencode-envoyer` sur plusieurs tours consécutifs — un échec de reconnaissance visuelle observé lors du premier test à 3 échanges, cause non investiguée.
 
 ## Prochaine étape exacte
-Utiliser `py run.py` pour les macros courantes, ou relancer les scripts de workflow avec OpenCode ouvert et visible.
+Reprendre `tests_manuels.md` quand le contexte OpenCode variera naturellement : valider la lecture OCR sur plusieurs pourcentages réels, puis la stabilité du clic de macro sur plusieurs tours.
 
 ## Question bloquante pour la session suivante
 Aucune.

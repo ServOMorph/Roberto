@@ -15,12 +15,37 @@ from pathlib import Path
 
 import pyperclip
 
-from app import APP_DIR, MacroEngine, MacroStore
+from app import APP_DIR, MacroEngine, MacroStore, ZoneStore, extract_percent, read_zone_text
 
 
 BRIDGE_DIR = APP_DIR / "_workflow_test"
 POLL_SECONDS = 1
 DEFAULT_TIMEOUT = 180
+DEFAULT_WATCH_THRESHOLD = 50
+
+
+class ContextLimitReached(RuntimeError):
+    pass
+
+
+def find_zone(name: str) -> dict:
+    zone = ZoneStore().find_by_name(name)
+    if not zone:
+        raise FileNotFoundError(f"Zone « {name} » introuvable. Déclarez-la dans Macrodesk avant de lancer ce test.")
+    return zone
+
+
+def check_watch_zone(zone: dict | None, threshold: int) -> None:
+    if zone is None:
+        return
+    text = read_zone_text(zone)
+    percent = extract_percent(text)
+    if percent is None:
+        raise ContextLimitReached(
+            f"Lecture OCR de la zone « {zone['name']} » impossible (texte lu : {text.strip()!r})."
+        )
+    if percent >= threshold:
+        raise ContextLimitReached(f"Contexte à {percent}% (seuil {threshold}%) — arrêt avant envoi.")
 
 
 def write_text(path: Path, content: str) -> None:
@@ -61,7 +86,8 @@ def run_macro(engine: MacroEngine, macro: dict) -> None:
         raise RuntimeError(f"La macro ne s'est pas terminée correctement : {engine.message}")
 
 
-def send_prompt(engine: MacroEngine, macro: dict, prompt: str) -> None:
+def send_prompt(engine: MacroEngine, macro: dict, prompt: str, zone: dict | None = None, threshold: int = DEFAULT_WATCH_THRESHOLD) -> None:
+    check_watch_zone(zone, threshold)
     pyperclip.copy(prompt)
     # Le collage est volontairement enregistré dans la macro sous Ctrl+V.
     run_macro(engine, macro)
@@ -103,12 +129,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Teste l'envoi de prompts vers OpenCode au moyen d'une macro Macrodesk.")
     parser.add_argument("--macro", default="opencode-envoyer", help="nom exact de la macro d'envoi")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT, help="délai maximal par réponse, en secondes")
+    parser.add_argument("--watch-zone", default=None, help="nom de la zone Macrodesk à lire par OCR avant chaque envoi")
+    parser.add_argument("--watch-threshold", type=int, default=DEFAULT_WATCH_THRESHOLD, help="pourcentage de contexte au-delà duquel l'envoi est refusé")
     args = parser.parse_args()
 
     if args.timeout < 10:
         parser.error("--timeout doit être d'au moins 10 secondes")
 
     macro = find_macro(args.macro)
+    watch_zone = find_zone(args.watch_zone) if args.watch_zone else None
     BRIDGE_DIR.mkdir(exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     request = BRIDGE_DIR / f"{stamp}-demande.md"
@@ -141,13 +170,13 @@ Ne modifie aucun autre fichier que ceux explicitement demandés dans ce test.
     engine.start_listeners()
     try:
         print("Étape 1/2 — envoi de la demande à OpenCode…")
-        send_prompt(engine, macro, request_prompt(request.resolve(), response_one.resolve()))
+        send_prompt(engine, macro, request_prompt(request.resolve(), response_one.resolve()), watch_zone, args.watch_threshold)
         print(f"Attente de la réponse dans {response_one.name}…")
         first_response = wait_for_answer(response_one, args.timeout)
         print("Réponse 1 reçue.")
 
         print("Étape 2/2 — demande de vérification à OpenCode…")
-        send_prompt(engine, macro, follow_up_prompt(response_one.resolve(), response_two.resolve(), artifact.resolve()))
+        send_prompt(engine, macro, follow_up_prompt(response_one.resolve(), response_two.resolve(), artifact.resolve()), watch_zone, args.watch_threshold)
         print(f"Attente de la réponse dans {response_two.name}…")
         final_response = wait_for_answer(response_two, args.timeout)
 
@@ -172,6 +201,9 @@ Ne modifie aucun autre fichier que ceux explicitement demandés dans ce test.
         )
         print(f"Test {status.upper()} — résultat : {manifest}")
         return 0 if status == "passed" else 1
+    except ContextLimitReached as error:
+        print(f"ARRÊT CONTEXTE : {error}", file=sys.stderr)
+        return 3
     except (FileNotFoundError, RuntimeError, TimeoutError) as error:
         print(f"TEST BLOQUÉ : {error}", file=sys.stderr)
         return 2

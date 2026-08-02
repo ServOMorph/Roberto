@@ -32,6 +32,12 @@ Les macros sont stockées localement dans `data/macros/`.
 
 Le workflow d'envoi de prompts par macro est décrit dans `WORKFLOW_OPENCODE.md`. Après avoir enregistré la macro `opencode-envoyer`, lancer `py workflow_test.py`.
 
+## Zones de surveillance (OCR)
+
+Une zone est un rectangle d'écran déclaré dans l'UI (bouton « + Nouvelle », tracé à la souris sur n'importe lequel des écrans). Macrodesk y lit un texte par OCR (Tesseract), utile par exemple pour surveiller le pourcentage de contexte affiché par OpenCode. Les zones sont stockées dans `data/zones.json`.
+
+`workflow_test.py` et `conversation_test.py` acceptent `--watch-zone <nom> --watch-threshold <n>` : avant chaque envoi de prompt, la zone est relue et l'envoi est refusé si le seuil est atteint ou si la lecture est illisible.
+
 ## État actuel
 
-Macrodesk est fonctionnel sur Windows : enregistrement/relecture multi-écrans, validation visuelle des clics, renommage de macros et option de ne pas enregistrer les mouvements souris. Le pont OpenCode a été validé sur un échange de deux tours et une conversation de dix tours.
+Macrodesk est fonctionnel sur Windows : enregistrement/relecture multi-écrans, validation visuelle des clics, renommage de macros, option de ne pas enregistrer les mouvements souris, et zones de surveillance OCR. Le pont OpenCode a été validé sur un échange de deux tours, une conversation de dix tours, et un contrôle de fiabilité OCR sur cinq échanges.
