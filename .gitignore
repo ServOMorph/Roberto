@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.venv/
+data/
+_workflow_test/
+vendor/proxy_tools/build/
+vendor/proxy_tools/*.egg-info/
