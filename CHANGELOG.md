@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4 — 2026-08-02
+
+### Corrigé
+- Bannière de contrôle : validation en conditions réelles après redémarrage de `py run.py` (le code était déjà correct, la persistance de la bannière sur toute une session multi-tours était masquée par un process non redémarré).
+
 ## v0.3 — 2026-08-02
 
 ### Ajouté
