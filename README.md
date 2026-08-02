@@ -36,8 +36,12 @@ Le workflow d'envoi de prompts par macro est décrit dans `WORKFLOW_OPENCODE.md`
 
 Une zone est un rectangle d'écran déclaré dans l'UI (bouton « + Nouvelle », tracé à la souris sur n'importe lequel des écrans). Macrodesk y lit un texte par OCR (Tesseract), utile par exemple pour surveiller le pourcentage de contexte affiché par OpenCode. Les zones sont stockées dans `data/zones.json`.
 
-`workflow_test.py` et `conversation_test.py` acceptent `--watch-zone <nom> --watch-threshold <n>` : avant chaque envoi de prompt, la zone est relue et l'envoi est refusé si le seuil est atteint ou si la lecture est illisible.
+`workflow_test.py` et `conversation_test.py` acceptent `--watch-zone <nom> --watch-threshold <n>` : avant chaque envoi de prompt, la zone est relue et l'envoi est refusé si le seuil est atteint ou si la lecture est illisible. Si le seuil est atteint, un `/compact` est envoyé automatiquement à OpenCode et sa confirmation écrite attendue avant de reprendre l'envoi.
+
+Pendant toute prise de contrôle de la machine (macro ou session `workflow_test.py`/`conversation_test.py`), une bannière rouge clignotante s'affiche dans l'UI.
+
+Le projet cible piloté par OpenCode peut définir un `AGENTS.md` à sa racine : les règles fixes (contraintes, format de compte rendu) y sont centralisées une fois pour toutes, et le prompt de chaque tour se limite au contexte dynamique.
 
 ## État actuel
 
-Macrodesk est fonctionnel sur Windows : enregistrement/relecture multi-écrans, validation visuelle des clics, renommage de macros, option de ne pas enregistrer les mouvements souris, et zones de surveillance OCR. Le pont OpenCode a été validé sur un échange de deux tours, une conversation de dix tours, et un contrôle de fiabilité OCR sur cinq échanges.
+Macrodesk est fonctionnel sur Windows : enregistrement/relecture multi-écrans, validation visuelle des clics, renommage de macros, option de ne pas enregistrer les mouvements souris, zones de surveillance OCR (overlay corrigé pour couvrir l'écran de l'UI elle-même) et bannière de contrôle. Le pont OpenCode a été fiabilisé (retrait de la vérification image sur les clics fragiles, `/compact` automatique au seuil de contexte) et validé sur plusieurs sessions consécutives de plusieurs tours sans échec de macro.

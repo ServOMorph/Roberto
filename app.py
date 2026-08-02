@@ -22,11 +22,13 @@ from pynput import keyboard, mouse
 APP_DIR = Path(__file__).resolve().parent
 MACROS_DIR = APP_DIR / "data" / "macros"
 ZONES_FILE = APP_DIR / "data" / "zones.json"
+CONTROL_FLAG_FILE = APP_DIR / "data" / "control.flag"
+CONTROL_SESSION_FLAG_FILE = APP_DIR / "data" / "control_session.flag"
 CONTEXT_WIDTH = 320
 CONTEXT_HEIGHT = 220
 SEARCH_WIDTH = 1100
 SEARCH_HEIGHT = 820
-MATCH_THRESHOLD = 0.86
+MATCH_THRESHOLD = 0.55
 
 
 def enable_dpi_awareness() -> None:
@@ -35,6 +37,44 @@ def enable_dpi_awareness() -> None:
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
     except (AttributeError, OSError):
         pass
+
+
+def mark_control_active() -> None:
+    """Signal that the machine's mouse/keyboard is under automated control.
+
+    Written as a plain flag file (not in-memory state) so that external
+    processes replaying a macro (workflow_test.py, conversation_test.py)
+    can raise it even though they run outside the UI's process.
+    """
+    CONTROL_FLAG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    CONTROL_FLAG_FILE.write_text(datetime.now().isoformat(timespec="seconds"), encoding="utf-8")
+
+
+def clear_control_active() -> None:
+    try:
+        CONTROL_FLAG_FILE.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def mark_session_active() -> None:
+    """Signal that an orchestrated OpenCode session is running (workflow_test.py,
+    conversation_test.py), from launch to end — not only during the mouse/keyboard
+    replay itself, but also while waiting on OpenCode's response.
+    """
+    CONTROL_SESSION_FLAG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    CONTROL_SESSION_FLAG_FILE.write_text(datetime.now().isoformat(timespec="seconds"), encoding="utf-8")
+
+
+def clear_session_active() -> None:
+    try:
+        CONTROL_SESSION_FLAG_FILE.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def is_control_active() -> bool:
+    return CONTROL_FLAG_FILE.exists() or CONTROL_SESSION_FLAG_FILE.exists()
 
 
 def clamp_box(left: int, top: int, width: int, height: int) -> dict[str, int]:
@@ -195,8 +235,13 @@ def select_zone_rectangle() -> dict[str, int] | None:
     # car la géométrie Tk ne gère pas les coordonnées négatives multi-écrans.
     root.geometry(f"{virtual['width']}x{virtual['height']}+0+0")
     root.update_idletasks()
+    # winfo_id() renvoie la fenêtre enfant Tk ; déplacer celle-ci laisse le
+    # toplevel réel à +0+0, qui clippe alors tout ce qui est à gauche de x=0
+    # (écrans aux coordonnées négatives). Il faut déplacer le toplevel.
+    handle = root.winfo_id()
+    toplevel = ctypes.windll.user32.GetParent(handle) or handle
     ctypes.windll.user32.MoveWindow(
-        root.winfo_id(), virtual["left"], virtual["top"], virtual["width"], virtual["height"], True
+        toplevel, virtual["left"], virtual["top"], virtual["width"], virtual["height"], True
     )
     canvas = tk.Canvas(root, cursor="cross", bg="black", highlightthickness=0)
     canvas.pack(fill="both", expand=True)
@@ -532,6 +577,7 @@ class MacroEngine:
                 self.message = "Macro introuvable."
             return
         previous_at = 0.0
+        mark_control_active()
         try:
             for event in macro.get("events", []):
                 if self.stop_event.wait(max(0, event.get("at", 0) - previous_at)):
@@ -560,6 +606,7 @@ class MacroEngine:
             with self.lock:
                 self.message = f"Lecture interrompue : {error}"
         finally:
+            clear_control_active()
             with self.lock:
                 if self.status == "playing":
                     self.status = "ready"
@@ -582,6 +629,7 @@ class MacroEngine:
             "zones": self.zone_store.list(),
             "zoneCapturing": self.zone_capturing,
             "zoneMessage": self.zone_message,
+            "controlActive": is_control_active(),
         }
 
 
@@ -628,6 +676,8 @@ class Api:
 
 def main() -> None:
     enable_dpi_awareness()
+    clear_control_active()
+    clear_session_active()
     engine = MacroEngine()
     engine.start_listeners()
     # MSS reports physical Windows coordinates, including negative coordinates

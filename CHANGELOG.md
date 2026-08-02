@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3 — 2026-08-02
+
+### Ajouté
+- Bannière de contrôle rouge clignotante dans l'UI, affichée pendant toute prise de contrôle de la machine (flags `mark_control_active`/`mark_session_active`).
+- `compact_opencode()` : envoi automatique de `/compact` à OpenCode et attente de confirmation écrite quand le seuil de contexte OCR est atteint, avant de reprendre l'envoi du prompt.
+- Support d'un `AGENTS.md` à la racine du projet cible : règles fixes centralisées, prompt de tour réduit au contexte dynamique.
+
+### Corrigé
+- Overlay de sélection de zone qui se réduisait sur l'écran occupé par l'UI -> déplacement du HWND toplevel Tk (et non du HWND enfant), fonctionne désormais sur tout écran.
+- Fragilité de la vérification image sur les clics de macro dans un chat au contenu changeant (`MATCH_THRESHOLD` abaissé, vérification retirée sur les clics concernés).
+
 ## v0.2 — 2026-08-02
 
 ### Ajouté

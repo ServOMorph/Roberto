@@ -9,13 +9,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
 
 import pyperclip
+from pynput import keyboard
 
-from app import APP_DIR, MacroEngine, MacroStore, ZoneStore, extract_percent, read_zone_text
+from app import APP_DIR, MacroEngine, MacroStore, ZoneStore, clear_session_active, extract_percent, mark_session_active, read_zone_text
 
 
 BRIDGE_DIR = APP_DIR / "_workflow_test"
@@ -26,6 +28,24 @@ DEFAULT_WATCH_THRESHOLD = 50
 
 class ContextLimitReached(RuntimeError):
     pass
+
+
+class UserAbort(RuntimeError):
+    """Levée quand l'utilisateur appuie sur Échap pendant une session de contrôle OpenCode."""
+
+
+def start_abort_listener(engine: MacroEngine, abort_event: threading.Event) -> keyboard.Listener:
+    """Échap : coupe la prise de contrôle en cours (comme F9) et arrête toute la session."""
+
+    def on_press(key: keyboard.Key | keyboard.KeyCode) -> None:
+        if key == keyboard.Key.esc:
+            abort_event.set()
+            if engine.status == "playing":
+                engine.stop_event.set()
+
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+    return listener
 
 
 def find_zone(name: str) -> dict:
@@ -52,9 +72,11 @@ def write_text(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def wait_for_answer(path: Path, timeout: int) -> str:
+def wait_for_answer(path: Path, timeout: int, abort_event: threading.Event | None = None) -> str:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
+        if abort_event is not None and abort_event.is_set():
+            raise UserAbort(f"Arrêt demandé par l'utilisateur (Échap) en attendant {path}.")
         if path.exists():
             answer = path.read_text(encoding="utf-8").strip()
             if answer:
@@ -74,23 +96,54 @@ def find_macro(name: str) -> dict:
     )
 
 
-def run_macro(engine: MacroEngine, macro: dict) -> None:
-    """Rejoue la macro tout en laissant F9 disponible comme arrêt d'urgence."""
+def run_macro(engine: MacroEngine, macro: dict, abort_event: threading.Event | None = None) -> None:
+    """Rejoue la macro tout en laissant F9/Échap disponibles comme arrêt d'urgence."""
     with engine.lock:
         engine.status = "playing"
         engine.stop_event.clear()
-        engine.message = "Workflow : envoi du prompt en cours — F9 pour arrêter."
+        engine.message = "Workflow : envoi du prompt en cours — F9 ou Échap pour arrêter."
     engine.play(macro["id"])
+    if abort_event is not None and abort_event.is_set():
+        raise UserAbort("Arrêt demandé par l'utilisateur (Échap) pendant la prise de contrôle.")
     outcome = engine.message.casefold()
     if "bloqué" in outcome or "interrompue" in outcome or "arrêt demandé" in outcome:
         raise RuntimeError(f"La macro ne s'est pas terminée correctement : {engine.message}")
 
 
-def send_prompt(engine: MacroEngine, macro: dict, prompt: str, zone: dict | None = None, threshold: int = DEFAULT_WATCH_THRESHOLD) -> None:
+def send_prompt(
+    engine: MacroEngine,
+    macro: dict,
+    prompt: str,
+    zone: dict | None = None,
+    threshold: int = DEFAULT_WATCH_THRESHOLD,
+    abort_event: threading.Event | None = None,
+) -> None:
     check_watch_zone(zone, threshold)
+    if abort_event is not None and abort_event.is_set():
+        raise UserAbort("Arrêt demandé par l'utilisateur (Échap) avant l'envoi du prompt.")
     pyperclip.copy(prompt)
     # Le collage est volontairement enregistré dans la macro sous Ctrl+V.
-    run_macro(engine, macro)
+    run_macro(engine, macro, abort_event)
+
+
+def compact_opencode(
+    engine: MacroEngine,
+    macro: dict,
+    archive_dir: Path,
+    abort_event: threading.Event | None = None,
+    timeout: int = 120,
+) -> None:
+    """Demande à OpenCode de compacter son contexte, puis attend la confirmation écrite."""
+    pyperclip.copy("/compact")
+    run_macro(engine, macro, abort_event)
+    response_file = archive_dir / f"compact-{datetime.now().strftime('%Y%m%d-%H%M%S')}.md"
+    prompt = (
+        "As-tu terminé le /compact demandé juste avant ? Une fois le compactage effectivement "
+        f"terminé, écris \"COMPACT TERMINE\" dans ce fichier exact : {response_file.resolve()}"
+    )
+    pyperclip.copy(prompt)
+    run_macro(engine, macro, abort_event)
+    wait_for_answer(response_file, timeout, abort_event)
 
 
 def request_prompt(request_file: Path, response_file: Path) -> str:
@@ -168,17 +221,20 @@ Ne modifie aucun autre fichier que ceux explicitement demandés dans ce test.
 
     engine = MacroEngine()
     engine.start_listeners()
+    abort_event = threading.Event()
+    abort_listener = start_abort_listener(engine, abort_event)
+    mark_session_active()
     try:
         print("Étape 1/2 — envoi de la demande à OpenCode…")
-        send_prompt(engine, macro, request_prompt(request.resolve(), response_one.resolve()), watch_zone, args.watch_threshold)
+        send_prompt(engine, macro, request_prompt(request.resolve(), response_one.resolve()), watch_zone, args.watch_threshold, abort_event)
         print(f"Attente de la réponse dans {response_one.name}…")
-        first_response = wait_for_answer(response_one, args.timeout)
+        first_response = wait_for_answer(response_one, args.timeout, abort_event)
         print("Réponse 1 reçue.")
 
         print("Étape 2/2 — demande de vérification à OpenCode…")
-        send_prompt(engine, macro, follow_up_prompt(response_one.resolve(), response_two.resolve(), artifact.resolve()), watch_zone, args.watch_threshold)
+        send_prompt(engine, macro, follow_up_prompt(response_one.resolve(), response_two.resolve(), artifact.resolve()), watch_zone, args.watch_threshold, abort_event)
         print(f"Attente de la réponse dans {response_two.name}…")
-        final_response = wait_for_answer(response_two, args.timeout)
+        final_response = wait_for_answer(response_two, args.timeout, abort_event)
 
         expected = "macro bridge OK"
         artifact_ok = artifact.exists() and artifact.read_text(encoding="utf-8").strip() == expected
@@ -201,6 +257,13 @@ Ne modifie aucun autre fichier que ceux explicitement demandés dans ce test.
         )
         print(f"Test {status.upper()} — résultat : {manifest}")
         return 0 if status == "passed" else 1
+    except UserAbort as error:
+        write_text(
+            manifest,
+            json.dumps({"macro": macro["name"], "startedAt": stamp, "status": "interrompu_utilisateur", "message": str(error)}, ensure_ascii=False, indent=2),
+        )
+        print(f"ARRÊT UTILISATEUR (Échap) : {error} — état noté dans {manifest}", file=sys.stderr)
+        return 4
     except ContextLimitReached as error:
         print(f"ARRÊT CONTEXTE : {error}", file=sys.stderr)
         return 3
@@ -208,6 +271,8 @@ Ne modifie aucun autre fichier que ceux explicitement demandés dans ce test.
         print(f"TEST BLOQUÉ : {error}", file=sys.stderr)
         return 2
     finally:
+        clear_session_active()
+        abort_listener.stop()
         engine.stop_event.set()
         engine.mouse_listener.stop()
         engine.keyboard_listener.stop()

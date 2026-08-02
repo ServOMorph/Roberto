@@ -11,6 +11,7 @@ function render(next) {
   $('#status-label').textContent = state.status === 'recording' ? 'ENREGISTREMENT' : state.status === 'playing' ? 'LECTURE' : 'PRÊT';
   $('#status-message').textContent = state.message;
   $('#status-dot').className = `status-dot ${active ? 'live' : ''}`;
+  $('#control-banner').classList.toggle('hidden', !state.controlActive);
   $('#record-mode').classList.toggle('active', state.actionMode === 'record');
   $('#play-mode').classList.toggle('active', state.actionMode === 'play');
   $('#record-mode').disabled = active;

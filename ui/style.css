@@ -45,5 +45,7 @@ button:disabled { cursor: not-allowed; opacity: .48; }
 .secondary { background: #283448; }
 .danger { margin-left: auto; color: #ffb9bd; background: #47282e; }
 .danger:hover:not(:disabled) { background: #62343c; }
+.control-banner { text-align: center; padding: 11px 13px; border-radius: 9px; color: #fff; font-weight: 700; letter-spacing: .4px; background: #d92b3a; animation: control-blink 1s step-start infinite; }
+@keyframes control-blink { 50% { opacity: .25; } }
 footer { margin-top: auto; padding-top: 20px; border-top: 1px solid #283142; }
 @media (max-width: 500px) { main { padding: 25px 20px; } }
