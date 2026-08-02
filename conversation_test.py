@@ -26,6 +26,11 @@ from workflow_test import (
 )
 
 
+def roadmap_complete(roadmap: Path) -> bool:
+    """Vrai si la roadmap ne contient plus aucune phase `[EN COURS]` (toutes traitées)."""
+    return "[EN COURS]" not in roadmap.read_text(encoding="utf-8")
+
+
 TIMEOUT_PER_TURN = 300
 DEFAULT_TURNS = 10
 PROJECT_DIR = Path(r"D:\ServOMorph\Ponganoid_v6")
@@ -34,7 +39,7 @@ PROJECT_DIR = Path(r"D:\ServOMorph\Ponganoid_v6")
 # dans Roberto/) pour qu'OpenCode y écrive sans demander de permission de sortir de son
 # dossier de travail. Roberto/ ne garde que l'outillage générique (macros, scripts).
 ROBERTO_DIR = PROJECT_DIR / "_ROBERTO"
-ROADMAP_PATH = ROBERTO_DIR / "roadmaps" / "roadmap_test_duree_5min.md"
+ROADMAP_PATH = ROBERTO_DIR / "roadmaps" / "roadmap_10_niveaux_briques_bonus.md"
 BRIDGE_DIR = ROBERTO_DIR / "conversations"
 
 
@@ -50,10 +55,10 @@ def prompt_for_turn(
         f"Aucun compte rendu de tour précédent dans cette session : inspecte l'état actuel de "
         f"`{project}` et de `{roadmap}` avant de commencer."
         if not previous_response
-        else f"Compte rendu du tour précédent :\n\n{previous_response[:6000]}"
+        else "Continue selon la phase [EN COURS] de la roadmap."
     )
     turn_label = f"{turn}/{total_turns}" if total_turns else str(turn)
-    return f"""Tour {turn_label}. Consulte AGENTS.md (racine du projet) pour les règles fixes.
+    return f"""Tour {turn_label}.
 
 Roadmap : `{roadmap}`
 
@@ -99,6 +104,7 @@ def main() -> int:
     try:
         previous_response: str | None = None
         stopped_by_duration = False
+        stopped_by_roadmap_complete = False
         turn = 0
         while turn < turn_count:
             if deadline is not None and time.monotonic() >= deadline:
@@ -106,6 +112,14 @@ def main() -> int:
                 print(
                     f"Durée maximale ({args.duration} min) atteinte — arrêt de l'envoi de nouveaux tours "
                     f"après {len(responses)} tour(s) complété(s).",
+                    flush=True,
+                )
+                break
+            if turn > 0 and roadmap_complete(ROADMAP_PATH):
+                stopped_by_roadmap_complete = True
+                print(
+                    f"Roadmap terminée (plus aucune phase [EN COURS]) — arrêt après "
+                    f"{len(responses)} tour(s) complété(s).",
                     flush=True,
                 )
                 break
@@ -129,7 +143,9 @@ def main() -> int:
             responses.append({"turn": str(turn), "response": previous_response})
             print(f"Tour {turn_label} — réponse reçue.", flush=True)
 
-        if stopped_by_duration:
+        if stopped_by_roadmap_complete:
+            status = "roadmap_terminee"
+        elif stopped_by_duration:
             status = "arrete_duree_max"
         elif len(responses) == turn_count:
             status = "passed"
@@ -152,7 +168,7 @@ def main() -> int:
             ),
         )
         print(f"CONVERSATION {status.upper()} — manifeste : {manifest}", flush=True)
-        return 0 if status in ("passed", "arrete_duree_max") else 1
+        return 0 if status in ("passed", "arrete_duree_max", "roadmap_terminee") else 1
     except UserAbort as error:
         write_text(
             manifest,

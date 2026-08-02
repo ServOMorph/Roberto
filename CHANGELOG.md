@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6 — 2026-08-02
+
+### Ajouté
+- `conversation_test.py` : arrêt automatique de la session (`roadmap_complete()`, statut `roadmap_terminee`) quand la roadmap active ne contient plus de phase `[EN COURS]`.
+
+### Modifié
+- `conversation_test.py` : prompt de tour allégé (`prompt_for_turn`) — suppression du rappel d'AGENTS.md (lu seul par OpenCode) et de l'écho du compte rendu du tour précédent (redondant avec l'historique conservé par OpenCode).
+
+### Corrigé
+- `/stop_opencode` : validé en conditions réelles à 4 reprises (reconstruction du `manifest.json`, nettoyage des flags de contrôle).
+
 ## v0.5 — 2026-08-02
 
 ### Ajouté

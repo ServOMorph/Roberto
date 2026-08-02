@@ -1,9 +1,9 @@
 # Signals — roberto (MAJ 2026-08-02)
 
 ## Actions ouvertes
-- [P2|ouvert] Planifier la prochaine roadmap fonctionnelle pour Ponganoid_v6 (config dynamique persistée, difficulté IA, sons/effets — hors périmètre des roadmaps actuelles) — fait quand : roadmap créée et validée avec l'utilisateur, réf: D:\ServOMorph\Ponganoid_v6\_ROBERTO\roadmaps\ (roadmap_acceleration_victoire_menu.md, roadmap_ligne_mediane.md et roadmap_premier_niveau_ia.md toutes [FAIT]).
-- [P2|ouvert] `conversation_test.py` : `ROADMAP_PATH` pointe vers la roadmap jetable `roadmap_test_duree_5min.md` (test du mode `--duration`) — fait quand : repointé vers une roadmap fonctionnelle avant toute relance fonctionnelle, réf: conversation_test.py ligne ROADMAP_PATH.
-- [P2|ouvert] Tester `/stop_opencode` et le mode `--duration` jusqu'au bout en conditions réelles (l'essai de 5 min du 2026-08-02 a été interrompu manuellement avant la fin, sans passer par la commande) — fait quand : une session `conversation_test.py` avec au moins un tour complété est stoppée via `/stop_opencode`, le `manifest.json` reconstruit est vérifié correct et les flags de contrôle sont confirmés propres, réf: .claude/commands/stop_opencode.md, conversation_test.py.
+- [P2|ouvert] Tester le mode `--duration` jusqu'à son terme naturel (arrêt automatique après délai, sans intervention manuelle) — fait quand : une session `conversation_test.py --duration N` va à son terme et le manifeste `arrete_duree_max` est vérifié correct, réf: conversation_test.py.
+- [P2|ouvert] Planifier la prochaine roadmap fonctionnelle pour Ponganoid_v6 — la roadmap 10 niveaux/briques/bonus est terminée (6/6 phases) — fait quand : nouvelle roadmap créée et validée avec l'utilisateur, réf: D:\ServOMorph\Ponganoid_v6\_ROBERTO\roadmaps\roadmap_10_niveaux_briques_bonus.md ([FAIT]).
+- [P3|ouvert] Compléter `VALIDATION_MANUELLE.md` de Ponganoid_v6 (partiellement rempli jusqu'à la phase 6) — fait quand : validation manuelle documentée pour l'ensemble du livrable 10 niveaux, réf: D:\ServOMorph\Ponganoid_v6\VALIDATION_MANUELLE.md.
 - [P3|ouvert] Fiabilité OCR sur des valeurs de contexte hors 7 %/50 % — fait quand : au moins 3 valeurs supplémentaires vérifiées manuellement, réf: tests_manuels.md.
 
 ## Dernière session (2026-08-02)
@@ -11,21 +11,26 @@
 # Session du 2026-08-02
 
 ## Décisions prises
-- `conversation_test.py` : le mode `--duration <minutes>` remplace un plafond de tours fixe pour limiter la durée d'une session — passé le délai, plus aucun nouveau tour n'est envoyé, mais le tour en cours va jusqu'à son terme (pas de coupure brutale d'OpenCode).
-- Quand `--duration` est utilisé sans `--turns` explicite, le nombre de tours n'est plus plafonné à `DEFAULT_TURNS` (10) : il devient illimité pour la durée de la session.
+- Roadmap fonctionnelle longue créée pour Ponganoid_v6 (10 niveaux vs IA, briques centrales, bonus), pilotée en session automatisée sans relecture humaine intermédiaire.
+- Protocole de prompt allégé : suppression de la mention AGENTS.md et de l'écho du compte rendu précédent (redondants avec l'historique conservé par OpenCode).
+- Les phases de roadmap peuvent être formulées de façon resserrée sans perte de qualité une fois les conventions du projet établies.
+- `conversation_test.py` s'arrête désormais automatiquement quand la roadmap ne contient plus de phase `[EN COURS]`.
 
 ## Livrables produits ou modifiés
-- `conversation_test.py` : modifié (option `--duration`, boucle par durée avec arrêt propre avant l'envoi du prochain tour, `turn_count` illimité par défaut si `--duration` sans `--turns`, `ROADMAP_PATH` repointé vers `roadmap_test_duree_5min.md`).
-- `.claude/commands/stop_opencode.md` : créé — arrête la tâche de fond `conversation_test.py`/`workflow_test.py` en cours, reconstruit le `manifest.json` manquant à partir des fichiers `prompt-NN.md`/`reponse-NN.md` déjà écrits, et nettoie `data/control.flag`/`data/control_session.flag` si aucun process légitime ne tourne plus. Non testé en conditions réelles.
-- `D:\ServOMorph\Ponganoid_v6\_ROBERTO\roadmaps\roadmap_test_duree_5min.md` : créé (hors repo Roberto, dans le projet cible) — roadmap jetable à 6 points courts pour générer assez d'échanges sur un essai de 5 minutes.
+- `D:\ServOMorph\Ponganoid_v6\_ROBERTO\roadmaps\roadmap_10_niveaux_briques_bonus.md` : créée, 6/6 phases [FAIT].
+- `conversation_test.py` : prompt allégé (`prompt_for_turn`), arrêt automatique (`roadmap_complete`), `ROADMAP_PATH` repointé.
+- Ponganoid_v6 (via OpenCode) : briques, vies, bonus raquette agrandie, 10 niveaux, IA progressive, écrans victoire/game over — 158 tests, validations réelles OK.
+- `/stop_opencode` : testé 4 fois en conditions réelles (bug OCR zone désalignée, timeout normal, arrêts manuels) — fonctionne, manifeste reconstruit à chaque fois.
 
 ## Hypothèses validées / invalidées
-- VALIDE : un arrêt forcé (kill) d'un process `conversation_test.py` contourne son bloc `finally` et laisse `data/control_session.flag` actif — nettoyage manuel nécessaire (constaté et corrigé pendant cette session, avant la création de `/stop_opencode`).
-- EN ATTENTE : le mode `--duration` n'a pas été observé jusqu'à son terme (arrêt naturel après délai) — l'essai lancé a été interrompu manuellement par l'utilisateur avant la fin des 5 minutes.
-- EN ATTENTE : `/stop_opencode` n'a pas encore été exécuté une seule fois.
+- VALIDE : OpenCode lit AGENTS.md seul, sans rappel dans le prompt.
+- VALIDE : réafficher le compte rendu précédent dans le prompt est une redondance pure.
+- VALIDE : des phases de roadmap resserrées donnent un résultat aussi rigoureux que des phases détaillées, une fois les conventions du projet établies.
+- INVALIDE (bug tiers) : un chemin corrompu généré par OpenCode a bloqué un tour — corrigé côté OpenCode par l'utilisateur, hors périmètre Roberto.
+- EN ATTENTE : mode `--duration` non testé jusqu'à son terme naturel cette session.
 
 ## Prochaine étape exacte
-Relancer une session `conversation_test.py --duration 5` (ou plus courte) sur `roadmap_test_duree_5min.md`, la laisser produire au moins un tour complet, puis appeler `/stop_opencode` pour valider la reconstruction du manifeste et le nettoyage des flags.
+Définir la prochaine roadmap fonctionnelle pour Ponganoid_v6 (la roadmap actuelle est terminée), ou tester `--duration` jusqu'à son terme naturel.
 
 ## Question bloquante pour la session suivante
 Aucune.
