@@ -15,15 +15,11 @@ const assistantAudioEl = document.getElementById("assistantAudio");
 
 let ws = null;
 let reconnectTimer = null;
-let mediaRecorder = null;
-let audioStream = null;
-let audioContext = null;
-let silenceTimer = null;
-let maxDurationTimer = null;
+let currentSession = null;
+let sessionCounter = 0;
 let hasSpoken = false;
 let voiceCancelled = false;
 let voicePaused = false;
-let discardNextRecording = false;
 let currentAudio = null;
 let audioUnlocked = false;
 
@@ -107,7 +103,7 @@ function connect() {
 function playAssistantAudio(base64, mime) {
   const inVoiceMode = voiceScreen.classList.contains("active") && !voiceCancelled;
   if (inVoiceMode) {
-    voiceCircle.classList.remove("thinking");
+    voiceCircle.classList.remove("thinking", "paused");
     voiceCircle.classList.add("done");
     voiceStatus.textContent = "Titi vous repond...";
   }
@@ -181,20 +177,8 @@ function pickMimeType() {
   return "";
 }
 
-function stopStream() {
-  clearTimeout(silenceTimer);
-  clearTimeout(maxDurationTimer);
-  if (audioStream) {
-    audioStream.getTracks().forEach((t) => t.stop());
-    audioStream = null;
-  }
-  if (audioContext) {
-    audioContext.close().catch(() => {});
-    audioContext = null;
-  }
-}
-
 function confirmAndSend(transcript) {
+  voiceCircle.classList.remove("paused");
   voiceCircle.classList.add("done");
   voiceStatus.textContent = "Compris, j'envoie a Titi";
 
@@ -204,7 +188,7 @@ function confirmAndSend(transcript) {
     done = true;
     sendUserMessage(transcript);
 
-    voiceCircle.classList.remove("done");
+    voiceCircle.classList.remove("done", "paused");
     voiceCircle.classList.add("thinking");
     voiceStatus.textContent = "Titi reflechit...";
   };
@@ -272,46 +256,51 @@ function startVoiceCapture() {
 
   openVoiceScreen();
 
+  const session = { id: ++sessionCounter, discard: false, stopped: false };
+  currentSession = session;
+
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then((stream) => {
-      if (voiceCancelled) {
+      if (voiceCancelled || currentSession !== session || session.stopped) {
         stream.getTracks().forEach((t) => t.stop());
         return;
       }
 
-      audioStream = stream;
+      session.stream = stream;
       const mimeType = pickMimeType();
-      mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      session.recorder = recorder;
       const chunks = [];
 
-      mediaRecorder.ondataavailable = (e) => {
+      recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
 
-      mediaRecorder.onstop = () => {
-        stopStream();
-        if (voiceCancelled) return;
-        if (discardNextRecording) {
-          discardNextRecording = false;
-          return;
-        }
-        const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+      recorder.onstop = () => {
+        clearTimeout(session.silenceTimer);
+        clearTimeout(session.maxDurationTimer);
+        stream.getTracks().forEach((t) => t.stop());
+        session.audioContext.close().catch(() => {});
+
+        if (session.discard || voiceCancelled) return;
+        const blob = new Blob(chunks, { type: recorder.mimeType });
         transcribeAudio(blob);
       };
 
-      mediaRecorder.start();
-      debugLog(`enregistrement demarre (${mediaRecorder.mimeType})`);
+      recorder.start();
+      debugLog(`enregistrement demarre (${recorder.mimeType})`);
 
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      audioContext = new AudioCtx();
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
+      const ctx = new AudioCtx();
+      session.audioContext = ctx;
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
       analyser.fftSize = 512;
       source.connect(analyser);
       const data = new Uint8Array(analyser.frequencyBinCount);
 
       function checkVolume() {
-        if (!audioStream) return;
+        if (currentSession !== session || session.stopped) return;
         analyser.getByteTimeDomainData(data);
         let sum = 0;
         for (let i = 0; i < data.length; i++) {
@@ -322,18 +311,18 @@ function startVoiceCapture() {
 
         if (rms > SPEECH_THRESHOLD) {
           hasSpoken = true;
-          clearTimeout(silenceTimer);
-          silenceTimer = setTimeout(() => {
-            if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+          clearTimeout(session.silenceTimer);
+          session.silenceTimer = setTimeout(() => {
+            if (recorder.state === "recording") recorder.stop();
           }, SILENCE_MS);
         }
 
-        if (audioStream) requestAnimationFrame(checkVolume);
+        requestAnimationFrame(checkVolume);
       }
       requestAnimationFrame(checkVolume);
 
-      maxDurationTimer = setTimeout(() => {
-        if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+      session.maxDurationTimer = setTimeout(() => {
+        if (recorder.state === "recording") recorder.stop();
       }, MAX_DURATION_MS);
     })
     .catch((err) => {
@@ -348,6 +337,20 @@ micBtn.addEventListener("click", () => {
   startVoiceCapture();
 });
 
+function haltSession(session) {
+  if (!session || session.stopped) return;
+  session.discard = true;
+  session.stopped = true;
+  if (session.recorder && session.recorder.state === "recording") {
+    session.recorder.stop();
+  } else if (session.stream) {
+    clearTimeout(session.silenceTimer);
+    clearTimeout(session.maxDurationTimer);
+    session.stream.getTracks().forEach((t) => t.stop());
+    if (session.audioContext) session.audioContext.close().catch(() => {});
+  }
+}
+
 voicePause.addEventListener("click", () => {
   if (voicePaused) {
     voicePaused = false;
@@ -358,12 +361,7 @@ voicePause.addEventListener("click", () => {
 
   voicePaused = true;
   voicePause.textContent = "Reprendre";
-  discardNextRecording = true;
-  if (mediaRecorder && mediaRecorder.state === "recording") {
-    mediaRecorder.stop();
-  } else {
-    stopStream();
-  }
+  haltSession(currentSession);
   voiceCircle.classList.remove("done", "thinking");
   voiceCircle.classList.add("paused");
   voiceStatus.textContent = "Micro en pause";
@@ -372,13 +370,11 @@ voicePause.addEventListener("click", () => {
 voiceCancel.addEventListener("click", () => {
   voiceCancelled = true;
   voicePaused = false;
-  discardNextRecording = false;
-  if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+  haltSession(currentSession);
   if (currentAudio) {
     currentAudio.pause();
     currentAudio = null;
   }
-  stopStream();
   closeVoiceScreen();
 });
 

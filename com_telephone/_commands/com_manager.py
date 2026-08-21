@@ -10,6 +10,7 @@ Usage CLI :
 Sans argument de composant : agit sur les 3 processus (node, stt, tts).
 Claude utilise ce script pour gerer l'assistant vocal sans intervention manuelle.
 """
+import os
 import subprocess
 import sys
 import time
@@ -18,6 +19,19 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent.parent / "voice-code-bridge"
 SERVER_DIR = BASE_DIR / "server"
 PID_DIR = Path(__file__).parent
+ENV_FILE = SERVER_DIR / ".env"
+
+
+def _charger_env() -> dict:
+    env = os.environ.copy()
+    if ENV_FILE.exists():
+        for ligne in ENV_FILE.read_text().splitlines():
+            ligne = ligne.strip()
+            if not ligne or ligne.startswith("#") or "=" not in ligne:
+                continue
+            cle, valeur = ligne.split("=", 1)
+            env[cle.strip()] = valeur.strip()
+    return env
 
 PYTHON311 = ["py", "-3.11"]
 
@@ -77,6 +91,7 @@ def cmd_start(name: str) -> str:
     handle = subprocess.Popen(
         proc["cmd"],
         cwd=str(proc["cwd"]),
+        env=_charger_env(),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         creationflags=subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0,
