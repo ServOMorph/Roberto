@@ -14,6 +14,6 @@ Markdown, Python (`ollama_call.py`), templates de commandes Claude Code.
 - `com_telephone/` : assistant vocal distant pour Claude Code (`voice-code-bridge/`)
 
 ## État actuel
-`com_telephone` (assistant vocal) est opérationnel de bout en bout, testé en conditions réelles
-depuis un iPhone via tunnel Cloudflare. Un correctif de couleur d'interface reste à reconfirmer
-par l'utilisateur (voir `tests_manuels.md`). Processus serveur actuellement arrêtés.
+`com_telephone` (assistant vocal) opérationnel de bout en bout et installé dans
+`D:\ServOMorph\creazik_v2\ROBERTO` (convention : dossier `ROBERTO` à la racine des projets cibles).
+En attente : récupération de la version corrigée de `com_manager.md` depuis la copie creazik_v2.

@@ -1,3 +1,14 @@
+## v0.2 — 2026-08-22
+
+### Ajouté
+- com_telephone : DEPLOYMENTS.md (registre des installations) + convention de déploiement dans un
+  dossier ROBERTO à la racine des projets cibles (analyser sans vider si contenu existant).
+- Installation de com_telephone dans D:\ServOMorph\creazik_v2\ROBERTO\com_telephone (copie
+  complète, AUTH_TOKEN dédié, npm install).
+
+### Validé
+- Correctif CSS de la bulle vocale (vert/orange après pause) confirmé en test réel — test manuel clos.
+
 ## v0.1 — 2026-08-21
 
 ### Corrigé
