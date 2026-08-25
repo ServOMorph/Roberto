@@ -74,6 +74,15 @@ def _lire_pid(pid_file: Path) -> int | None:
     return None
 
 
+def _lien_appli() -> str | None:
+    env = _charger_env()
+    token = env.get("AUTH_TOKEN")
+    tunnel_url = env.get("TUNNEL_URL")
+    if not token or not tunnel_url:
+        return None
+    return f"https://{tunnel_url}/?token={token}"
+
+
 def cmd_status(name: str) -> str:
     proc = PROCESSES[name]
     pid = _lire_pid(proc["pid_file"])
@@ -86,21 +95,30 @@ def cmd_start(name: str) -> str:
     proc = PROCESSES[name]
     pid = _lire_pid(proc["pid_file"])
     if pid and _pid_actif(pid):
-        return f"[OK] {name} deja actif (PID {pid})"
+        msg = f"[OK] {name} deja actif (PID {pid})"
+    else:
+        handle = subprocess.Popen(
+            proc["cmd"],
+            cwd=str(proc["cwd"]),
+            env=_charger_env(),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0,
+        )
+        proc["pid_file"].write_text(str(handle.pid))
+        time.sleep(1)
+        if _pid_actif(handle.pid):
+            msg = f"[OK] {name} lance (PID {handle.pid})"
+        else:
+            msg = f"[KO] {name} n'a pas demarre"
 
-    handle = subprocess.Popen(
-        proc["cmd"],
-        cwd=str(proc["cwd"]),
-        env=_charger_env(),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0,
-    )
-    proc["pid_file"].write_text(str(handle.pid))
-    time.sleep(1)
-    if _pid_actif(handle.pid):
-        return f"[OK] {name} lance (PID {handle.pid})"
-    return f"[KO] {name} n'a pas demarre"
+    if name == "node" and msg.startswith("[OK]"):
+        lien = _lien_appli()
+        if lien:
+            msg += f"\nLien appli : {lien}"
+        else:
+            msg += "\n[ATTENTION] AUTH_TOKEN et/ou TUNNEL_URL absents de .env : lien non affiche"
+    return msg
 
 
 def cmd_stop(name: str) -> str:
@@ -134,7 +152,7 @@ ACTIONS = {
 
 
 if __name__ == "__main__":
-    action = sys.argv[1] if len(sys.argv) > 1 else "status"
+    action = sys.argv[1] if len(sys.argv) > 1 else "start"
     component = sys.argv[2] if len(sys.argv) > 2 else None
 
     if action not in ACTIONS:

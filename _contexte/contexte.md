@@ -7,10 +7,11 @@ Copie réorganisée de claude-vibecoding-kit, réalisée étape par étape.
 Markdown, Python (ollama_call.py), templates de commandes Claude Code
 
 ## État actuel (réécrit intégralement à chaque /close)
-com_telephone opérationnel de bout en bout, installé dans creazik_v2 (dossier ROBERTO, AUTH_TOKEN
-dédié). Registre des déploiements : com_telephone/DEPLOYMENTS.md. Correctif bulle validé en réel.
-En attente : récupération de la version corrigée de com_manager.md depuis la copie creazik_v2
-(tests utilisateur en cours). Process serveur arrêtés.
+com_telephone (source Roberto) remplacé par la version testée en conditions réelles dans creazik_v2
+(push VAPID, corrections). com_manager affiche le lien appli (token) au démarrage et démarre tout
+par défaut sans argument. Déployé dans D:\ServOMorph\IA_Life\ROBERTO\com_telephone (AUTH_TOKEN +
+VAPID + TUNNEL_URL dédiés). Registre : com_telephone/DEPLOYMENTS.md (v0.2 IA_Life). En attente :
+test réel utilisateur (Monitor + réponse téléphone) côté IA_Life. Process serveur arrêtés.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
 - 2026-08-20 : Initialisation du protocole vibecoding.
@@ -19,3 +20,7 @@ En attente : récupération de la version corrigée de com_manager.md depuis la 
 - 2026-08-21 : Convention de déploiement : tout ce qui vient de ServOMorph s'installe dans un
   dossier ROBERTO à la racine du projet cible. Si le projet a déjà du contenu ServOMorph,
   l'analyser avant, ne jamais le vider.
+- 2026-08-25 : com_telephone remplacé intégralement par la version validée en réel dans creazik_v2
+  (nouvelle source de vérité pour les futurs déploiements).
+- 2026-08-25 : com_manager.py affiche le lien appli (token) au démarrage et démarre tout par défaut
+  sans argument — nécessite TUNNEL_URL dans .env en plus d'AUTH_TOKEN.

@@ -55,6 +55,16 @@
     letter-spacing: 0.05em;
     font-size: 11px;
   }
+  #resetBtn {
+    background: none;
+    border: 1px solid #2c303a;
+    border-radius: 999px;
+    padding: 4px 10px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #resetBtn:active { opacity: 0.7; }
 
   #chat {
     flex: 1;
@@ -86,16 +96,21 @@
     color: var(--fg);
     border-bottom-left-radius: 4px;
   }
+  .bubble.assistant.thinking {
+    color: var(--muted);
+    font-style: italic;
+  }
 
   form#composer {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 10px);
     border-top: 1px solid #22252c;
     flex-shrink: 0;
   }
   #textInput {
     flex: 1;
+    min-width: 0;
     background: var(--bg-alt);
     color: var(--fg);
     border: 1px solid #2c303a;
@@ -109,8 +124,8 @@
     color: white;
     border: none;
     border-radius: 999px;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     font-size: 18px;
     cursor: pointer;
     flex-shrink: 0;
@@ -123,13 +138,51 @@
     color: var(--fg);
     border: 1px solid #2c303a;
     border-radius: 999px;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     font-size: 18px;
     cursor: pointer;
     flex-shrink: 0;
   }
   #micBtn:active { opacity: 0.7; }
+
+  #imgBtn {
+    background: var(--bg-alt);
+    color: var(--fg);
+    border: 1px solid #2c303a;
+    border-radius: 999px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #imgBtn:active { opacity: 0.7; }
+
+  #statusBtn {
+    background: var(--bg-alt);
+    color: var(--fg);
+    border: 1px solid #2c303a;
+    border-radius: 999px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #statusBtn:active { opacity: 0.7; }
+
+  .bubble.user img {
+    max-width: 100%;
+    border-radius: 10px;
+    display: block;
+  }
+
+  .bubbleStatus {
+    margin-top: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+  }
 
   #voiceScreen {
     position: fixed;
@@ -180,27 +233,92 @@
   }
 
   #voiceCancel {
-    position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 16px);
-    right: 20px;
-    background: none;
-    border: none;
+    background: var(--bg-alt);
+    border: 1px solid #2c303a;
+    border-radius: 999px;
+    padding: 10px 16px;
     color: var(--muted);
     font-size: 14px;
     cursor: pointer;
   }
 
-  #voicePause {
+  #voiceControls {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 16px);
-    left: 20px;
-    background: none;
-    border: 1px solid var(--muted);
-    border-radius: 999px;
-    padding: 6px 14px;
+    left: 24px;
+    right: 24px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+  }
+
+  #validationBar {
+    display: none;
+    justify-content: center;
+    gap: 12px;
+    padding: 6px 12px;
+    border-top: 1px solid #22252c;
+    flex-shrink: 0;
+  }
+  #validationBar.visible { display: flex; }
+  .validationBtn {
+    border: 1px solid #2c303a;
+    background: var(--bg-alt);
     color: var(--muted);
-    font-size: 13px;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: 14px;
     cursor: pointer;
+  }
+  .validationBtn.ok { color: var(--ok); border-color: #1d4a2b; }
+  .validationBtn.corriger { color: var(--err); border-color: #55232a; }
+
+  #voiceValidation {
+    position: absolute;
+    left: 24px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #voiceValidation.visible { display: flex; }
+  #voiceValidation .validationBtn {
+    background: rgba(26, 29, 36, 0.85);
+  }
+
+  #modeBtn {
+    background: var(--bg-alt);
+    border: 1px solid #2c303a;
+    border-radius: 999px;
+    padding: 10px 16px;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  #micHold {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-alt);
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  #micHold.armed {
+    background: var(--err);
+    color: #fff;
+    box-shadow: 0 0 24px 6px rgba(239, 68, 68, 0.45);
+  }
+  #micHold.recording {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 24px 6px rgba(59, 130, 246, 0.45);
   }
 </style>
 </head>
@@ -208,23 +326,44 @@
 
   <header>
     <span id="connDot"></span>
-    <span id="connLabel">Deconnecte</span>
+    <span id="connLabel">Déconnecté</span>
     <span id="stateLabel"></span>
+    <button id="resetBtn" type="button">Reset</button>
   </header>
 
   <div id="chat"></div>
 
+  <div id="validationBar">
+    <button id="validBtn" class="validationBtn ok" type="button">✓ Validé</button>
+    <button id="corrBtn" class="validationBtn corriger" type="button">✗ Corrigé</button>
+  </div>
+
   <form id="composer">
-    <input id="textInput" type="text" placeholder="Ecrire un message..." autocomplete="off">
+    <input id="textInput" type="text" placeholder="Écrire un message..." autocomplete="off">
+    <input id="imgInput" type="file" accept="image/*" hidden>
+    <button id="imgBtn" type="button" aria-label="Image">img</button>
+    <button id="statusBtn" type="button" aria-label="Statut">?</button>
     <button id="micBtn" type="button">mic</button>
     <button id="sendBtn" type="submit">-></button>
   </form>
 
   <div id="voiceScreen">
-    <button id="voicePause" type="button">Pause micro</button>
-    <button id="voiceCancel" type="button">Annuler</button>
     <div class="voiceCircle" id="voiceCircle"></div>
-    <div id="voiceStatus">Je vous ecoute...</div>
+    <div id="voiceStatus">Je vous écoute...</div>
+    <div id="voiceValidation">
+      <button id="voiceValidBtn" class="validationBtn ok" type="button">✓ Validé</button>
+      <button id="voiceCorrBtn" class="validationBtn corriger" type="button">✗ Corrigé</button>
+    </div>
+    <div id="voiceControls">
+      <button id="voiceCancel" type="button">Chat</button>
+      <button id="modeBtn" type="button">Auto</button>
+      <button id="micHold" type="button" aria-label="Micro">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"/>
+          <path d="M17.3 11a5.5 5.5 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <audio id="assistantAudio" playsinline style="display:none"></audio>

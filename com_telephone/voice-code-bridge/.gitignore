@@ -3,3 +3,5 @@ server/voices/
 server/messages.log
 server/.env
 *.wav
+
+server/push_subs.json

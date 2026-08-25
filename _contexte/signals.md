@@ -1,30 +1,38 @@
-# Signals — roberto   (MAJ 2026-08-22)
+# Signals — roberto   (MAJ 2026-08-25)
 
 ## Actions ouvertes
-- [P1|ouvert] Récupérer la version corrigée de com_manager.md par l'utilisateur depuis la copie ROBERTO de creazik_v2 (il modifie et teste, bugs constatés au lancement). fait quand: l'utilisateur confirme que ses tests sont OK et demande de prendre sa version. réf: D:\ServOMorph\creazik_v2\ROBERTO\com_telephone\_commands\com_manager.md (version en test), D:\ServOMorph\Roberto\com_telephone\_commands\com_manager.md (source à mettre à jour)
+- [P1|ouvert] Valider en conditions réelles que `/com_manager` (via `@com_manager.md`, sans argument) active tout et permet à l'agent `ia-life-83` de répondre aux messages du téléphone (Monitor). fait quand: l'utilisateur confirme avoir reçu une réponse vocale sur le téléphone après un message envoyé depuis l'appli déployée dans IA_Life. réf: D:\ServOMorph\IA_Life\ROBERTO\com_telephone\_commands\com_manager.md, session ia-life-83
 - [P2|ouvert] Fiabiliser la livraison des messages `/send` en cas de coupure WebSocket (Safari iOS décharge l'onglet en arrière-plan, message perdu sans rattrapage). fait quand: un mécanisme de file d'attente ou de ré-émission est en place, ou décision explicite de ne pas le faire. réf: com_telephone/voice-code-bridge/server/server.js (endpoint /send), com_telephone/voice-code-bridge/mobile/app.js (reconnectTimer)
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-08-22
+# Session du 2026-08-25
 
 ## Décisions prises
-- Convention de déploiement : tout livrable ServOMorph s'installe dans un dossier ROBERTO à la
-  racine du projet cible ; si du contenu ServOMorph y existe déjà, l'analyser sans le vider.
+- com_telephone (Roberto) remplacé intégralement par la version fonctionnelle de creazik_v2
+  (push notifications VAPID, corrections serveur/mobile).
+- Déploiement de com_telephone dans un nouveau projet : IA_Life (D:\ServOMorph\IA_Life\ROBERTO).
+- com_manager affiche désormais le lien appli (token inclus) au démarrage de node ; nécessite
+  TUNNEL_URL en plus d'AUTH_TOKEN dans .env.
+- Action par défaut de com_manager changée de `status` à `start` : appel sans argument = activation
+  automatique complète.
 
 ## Livrables produits ou modifiés
-- com_telephone/DEPLOYMENTS.md : créé (registre des installations, convention en en-tête)
-- D:\ServOMorph\creazik_v2\ROBERTO\com_telephone : installé (copie complète, AUTH_TOKEN dédié, npm install)
-- tests_manuels.md : vidé (correctif bulle validé)
+- com_telephone/ (README, com_manager.md/.py, gitignore, app.js, index.html, package.json/lock,
+  server.js, tts_server.py, _docs/, sw.js, salutations.json) : remplacés/mis à jour depuis creazik_v2
+- com_telephone/voice-code-bridge/server/.env : ajout TUNNEL_URL
+- com_telephone/DEPLOYMENTS.md : entrée v0.2 IA_Life ajoutée
+- D:\ServOMorph\IA_Life\ROBERTO\com_telephone : déployé (copie + .env dédié AUTH_TOKEN/VAPID/TUNNEL_URL)
 
 ## Hypothèses validées / invalidées
-- VALIDE : correctif CSS bulle (vert/orange après pause) — confirmé par l'utilisateur
-- EN ATTENTE : com_manager.md modifié et testé par l'utilisateur côté creazik_v2 (bugs constatés
-  au lancement) — récupération de sa version à sa demande
+- VALIDE : affichage du lien avec token au démarrage (curl : 401 sans token, 200 avec)
+- VALIDE : démarrage automatique sans argument (testé en direct sur IA_Life)
+- EN ATTENTE : test réel utilisateur via `/com_manager` dans la session VSCode IA_Life, avec
+  activation effective du Monitor et réponse depuis le téléphone
 
 ## Prochaine étape exacte
-Quand l'utilisateur confirme ses tests sur com_manager.md (copie creazik_v2\ROBERTO), copier cette
-version vers la source com_telephone/_commands/.
+Utilisateur teste "applique @com_manager.md" (sans argument) dans la session VSCode ouverte sur
+IA_Life ; vérifier lien affiché + réponse effective reçue sur le téléphone.
 
 ## Question bloquante pour la session suivante
 Aucune

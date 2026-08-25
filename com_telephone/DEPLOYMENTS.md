@@ -9,3 +9,4 @@ l'analyser d'abord — ne jamais le vider.
 | Version | Projet | Chemin | Date |
 |---------|--------|--------|------|
 | v0.1 | creazik_v2 | D:\ServOMorph\creazik_v2\ROBERTO\com_telephone | 2026-08-21 |
+| v0.2 | IA_Life | D:\ServOMorph\IA_Life\ROBERTO\com_telephone | 2026-08-25 |

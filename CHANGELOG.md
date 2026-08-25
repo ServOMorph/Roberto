@@ -1,3 +1,15 @@
+## v0.3 — 2026-08-25
+
+### Ajouté
+- com_manager.py : affiche le lien appli (`https://<TUNNEL_URL>/?token=<AUTH_TOKEN>`) au démarrage
+  de node. Action par défaut passée de `status` à `start` (appel sans argument = activation complète).
+- com_telephone déployé dans D:\ServOMorph\IA_Life\ROBERTO\com_telephone (AUTH_TOKEN + VAPID +
+  TUNNEL_URL dédiés), entrée v0.2 ajoutée à DEPLOYMENTS.md.
+
+### Modifié
+- com_telephone (source Roberto) remplacé intégralement par la version validée en conditions
+  réelles dans creazik_v2 (notifications push VAPID, corrections serveur/mobile).
+
 ## v0.2 — 2026-08-22
 
 ### Ajouté

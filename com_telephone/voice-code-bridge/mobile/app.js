@@ -1,17 +1,33 @@
 const connDot = document.getElementById("connDot");
 const connLabel = document.getElementById("connLabel");
 const stateLabel = document.getElementById("stateLabel");
+const resetBtn = document.getElementById("resetBtn");
 const chat = document.getElementById("chat");
 const composer = document.getElementById("composer");
 const textInput = document.getElementById("textInput");
 const sendBtn = document.getElementById("sendBtn");
+const imgInput = document.getElementById("imgInput");
+const imgBtn = document.getElementById("imgBtn");
+const statusBtn = document.getElementById("statusBtn");
 const micBtn = document.getElementById("micBtn");
 const voiceScreen = document.getElementById("voiceScreen");
 const voiceCircle = document.getElementById("voiceCircle");
 const voiceStatus = document.getElementById("voiceStatus");
 const voiceCancel = document.getElementById("voiceCancel");
-const voicePause = document.getElementById("voicePause");
+const modeBtn = document.getElementById("modeBtn");
+const micHold = document.getElementById("micHold");
 const assistantAudioEl = document.getElementById("assistantAudio");
+const validationBar = document.getElementById("validationBar");
+const validBtn = document.getElementById("validBtn");
+const corrBtn = document.getElementById("corrBtn");
+const voiceValidation = document.getElementById("voiceValidation");
+const voiceValidBtn = document.getElementById("voiceValidBtn");
+const voiceCorrBtn = document.getElementById("voiceCorrBtn");
+
+function showValidationButtons(show) {
+  validationBar.classList.toggle("visible", show);
+  voiceValidation.classList.toggle("visible", show);
+}
 
 let ws = null;
 let reconnectTimer = null;
@@ -19,11 +35,99 @@ let currentSession = null;
 let sessionCounter = 0;
 let hasSpoken = false;
 let voiceCancelled = false;
-let voicePaused = false;
 let currentAudio = null;
 let audioUnlocked = false;
+let retryArmed = false;
+let wakeLock = null;
+let recordMode = "auto";
+
+try {
+  recordMode = localStorage.getItem("recordMode") === "manual" ? "manual" : "auto";
+} catch {}
+
+function setRecordMode(mode) {
+  recordMode = mode;
+  try {
+    localStorage.setItem("recordMode", mode);
+  } catch {}
+  modeBtn.textContent = mode === "auto" ? "Auto" : "Manuel";
+}
+
+function armMic() {
+  micHold.classList.add("armed");
+  micHold.classList.remove("recording");
+}
+
+function disarmMic() {
+  micHold.classList.remove("armed", "recording");
+}
+
+function setMicRecording() {
+  micHold.classList.remove("armed");
+  micHold.classList.add("recording");
+}
 
 const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+
+const VAPID_PUBLIC_KEY = "BKC6aqByutnydUfVxi7BuOtucfm-ikUf0HHmmbLoFilbSInDVY4RdaGc2yQ_wMLkMmG9xz3BB2oVZwp7hcgW-XA";
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+let pushEnabled = false;
+
+async function enablePushNotifications() {
+  if (pushEnabled) return;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || Notification.permission !== "granted") return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    await fetch("/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sub)
+    });
+    pushEnabled = true;
+  } catch (err) {
+    debugLog(`abonnement push impossible: ${err.message}`);
+  }
+}
+
+async function askPushPermission() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (Notification.permission === "default") {
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") await enablePushNotifications();
+    } catch {}
+  } else if (Notification.permission === "granted") {
+    await enablePushNotifications();
+  }
+}
+
+async function requestWakeLock() {
+  try {
+    if ("wakeLock" in navigator && document.visibilityState === "visible") {
+      wakeLock = await navigator.wakeLock.request("screen");
+    }
+  } catch {}
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") requestWakeLock();
+});
 
 function unlockAudioElement() {
   if (audioUnlocked) return;
@@ -49,25 +153,130 @@ function wsUrl() {
 
 function setConnected(connected) {
   connDot.classList.toggle("connected", connected);
-  connLabel.textContent = connected ? "Connecte" : "Deconnecte";
+  connLabel.textContent = connected ? "Connecté" : "Déconnecté";
 }
 
 function setState(state) {
   const labels = {
-    listening: "Ecoute",
+    listening: "Écoute",
     processing: "Traitement",
-    speaking: "Reponse",
+    speaking: "Réponse",
     error: "Erreur"
   };
   stateLabel.textContent = labels[state] || "";
+  if (state === "processing") {
+    showThinking();
+  } else {
+    hideThinking();
+  }
 }
 
-function addBubble(role, text) {
+let thinkingEl = null;
+
+function showThinking() {
+  if (thinkingEl) return;
+  thinkingEl = document.createElement("div");
+  thinkingEl.className = "bubble assistant thinking";
+  thinkingEl.textContent = "Titi réfléchit...";
+  chat.appendChild(thinkingEl);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function hideThinking() {
+  if (!thinkingEl) return;
+  thinkingEl.remove();
+  thinkingEl = null;
+}
+
+const HISTORY_KEY = "chatHistory";
+const MAX_HISTORY = 50;
+
+function pushHistory(entry) {
+  let history = [];
+  try {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+  } catch {}
+  history.push(entry);
+  if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {}
+}
+
+function renderTextBubble(role, text) {
   const el = document.createElement("div");
   el.className = `bubble ${role}`;
   el.textContent = text;
   chat.appendChild(el);
   chat.scrollTop = chat.scrollHeight;
+}
+
+function renderImageBubble(role, dataUrl, caption) {
+  const el = document.createElement("div");
+  el.className = `bubble ${role}`;
+  const img = document.createElement("img");
+  img.onload = () => { chat.scrollTop = chat.scrollHeight; };
+  img.src = dataUrl;
+  el.appendChild(img);
+  if (caption) {
+    const p = document.createElement("div");
+    p.textContent = caption;
+    p.style.marginTop = "6px";
+    el.appendChild(p);
+  }
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addBubble(role, text) {
+  renderTextBubble(role, text);
+  pushHistory({ type: "text", role, text });
+}
+
+let messageCounter = 0;
+const pendingStatus = new Map();
+
+function addUserMessageBubble(text, id) {
+  const el = document.createElement("div");
+  el.className = "bubble user";
+  const textEl = document.createElement("div");
+  textEl.textContent = text;
+  el.appendChild(textEl);
+  const statusEl = document.createElement("div");
+  statusEl.className = "bubbleStatus";
+  statusEl.textContent = "Envoi en cours...";
+  el.appendChild(statusEl);
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+  pendingStatus.set(id, statusEl);
+  pushHistory({ type: "text", role: "user", text });
+}
+
+function markMessageDelivered(id) {
+  const statusEl = pendingStatus.get(id);
+  if (!statusEl) return;
+  statusEl.textContent = "Livré à Titi";
+  pendingStatus.delete(id);
+  setTimeout(() => statusEl.remove(), 2000);
+}
+
+function addImageBubble(role, dataUrl, caption) {
+  renderImageBubble(role, dataUrl, caption);
+  pushHistory({ type: "image", role, dataUrl, caption });
+}
+
+function restoreHistory() {
+  let history = [];
+  try {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+  } catch {}
+  for (const entry of history) {
+    if (entry.type === "image") {
+      renderImageBubble(entry.role, entry.dataUrl, entry.caption);
+    } else {
+      renderTextBubble(entry.role, entry.text);
+    }
+  }
 }
 
 function connect() {
@@ -92,8 +301,12 @@ function connect() {
 
     if (msg.type === "state") {
       setState(msg.state);
+    } else if (msg.type === "message.ack") {
+      markMessageDelivered(msg.id);
     } else if (msg.type === "assistant.text") {
+      hideThinking();
       addBubble("assistant", msg.text);
+      showValidationButtons(!!msg.awaitValidation);
     } else if (msg.type === "assistant.audio") {
       playAssistantAudio(msg.audio, msg.mime);
     }
@@ -105,7 +318,7 @@ function playAssistantAudio(base64, mime) {
   if (inVoiceMode) {
     voiceCircle.classList.remove("thinking", "paused");
     voiceCircle.classList.add("done");
-    voiceStatus.textContent = "Titi vous repond...";
+    voiceStatus.textContent = "Titi vous répond...";
   }
 
   const audio = assistantAudioEl;
@@ -116,11 +329,13 @@ function playAssistantAudio(base64, mime) {
     currentAudio = null;
     audio.onended = null;
     audio.onerror = null;
-    if (inVoiceMode && !voiceCancelled && !voicePaused) {
-      startVoiceCapture();
-    } else if (voicePaused) {
-      voiceCircle.classList.add("paused");
-      voiceStatus.textContent = "Micro en pause";
+    if (inVoiceMode && !voiceCancelled) {
+      if (recordMode === "auto") {
+        startVoiceCapture();
+      } else {
+        armMic();
+        voiceStatus.textContent = "Prêt. Maintenez le micro appuyé pour parler.";
+      }
     }
   };
 
@@ -137,11 +352,117 @@ function playAssistantAudio(base64, mime) {
   });
 }
 
-function sendUserMessage(text) {
+function sendUserMessage(text, channel) {
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-  addBubble("user", text);
-  ws.send(JSON.stringify({ type: "user.message", text }));
+  const id = `u${Date.now()}_${++messageCounter}`;
+  addUserMessageBubble(text, id);
+  ws.send(JSON.stringify({ type: "user.message", text, channel: channel || "texte", id }));
 }
+
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+function sendUserImage(file) {
+  if (!file || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (file.size > MAX_IMAGE_BYTES) {
+    debugLog(`image trop volumineuse: ${file.size} octets`);
+    return;
+  }
+  const caption = textInput.value.trim();
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    addImageBubble("user", dataUrl, caption);
+    ws.send(JSON.stringify({ type: "user.image", data: dataUrl, caption }));
+    textInput.value = "";
+  };
+  reader.onerror = () => debugLog("lecture image echouee");
+  reader.readAsDataURL(file);
+}
+
+async function pasteImageFromClipboard() {
+  if (!navigator.clipboard || !navigator.clipboard.read) {
+    imgInput.click();
+    return;
+  }
+  try {
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const type = item.types.find((t) => t.startsWith("image/"));
+      if (type) {
+        const blob = await item.getType(type);
+        sendUserImage(blob);
+        return;
+      }
+    }
+    debugLog("aucune image dans le presse-papier");
+    imgInput.click();
+  } catch (err) {
+    debugLog(`lecture presse-papier impossible: ${err.message}`);
+    imgInput.click();
+  }
+}
+
+imgBtn.addEventListener("click", pasteImageFromClipboard);
+
+statusBtn.addEventListener("click", () => {
+  sendUserMessage("Que fais-tu ?", "texte");
+});
+resetBtn.addEventListener("click", () => {
+  chat.innerHTML = "";
+  try {
+    localStorage.removeItem(HISTORY_KEY);
+  } catch {}
+});
+imgInput.addEventListener("change", () => {
+  const file = imgInput.files[0];
+  imgInput.value = "";
+  sendUserImage(file);
+});
+
+function sendValidation(value) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: "user.validation", value }));
+}
+
+function startCorrectionCapture() {
+  haltSession(currentSession);
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  if (recordMode === "auto") {
+    startVoiceCapture();
+  } else {
+    openVoiceScreen();
+    voiceStatus.textContent = "Correction. Maintenez le micro appuyé pour dicter.";
+  }
+}
+
+validBtn.addEventListener("click", () => {
+  sendValidation("ok");
+  addBubble("user", "✓ Validé");
+  showValidationButtons(false);
+});
+
+corrBtn.addEventListener("click", () => {
+  sendValidation("corriger");
+  addBubble("user", "✗ Corrigé");
+  showValidationButtons(false);
+  unlockAudioElement();
+  startCorrectionCapture();
+});
+
+voiceValidBtn.addEventListener("click", () => {
+  sendValidation("ok");
+  voiceStatus.textContent = "Validé.";
+  showValidationButtons(false);
+});
+
+voiceCorrBtn.addEventListener("click", () => {
+  sendValidation("corriger");
+  showValidationButtons(false);
+  startCorrectionCapture();
+});
 
 composer.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -153,13 +474,19 @@ composer.addEventListener("submit", (e) => {
 function openVoiceScreen() {
   voiceScreen.classList.add("active");
   voiceCircle.classList.remove("done", "thinking", "paused");
-  voiceStatus.textContent = "Je vous ecoute...";
-  voicePause.textContent = "Pause micro";
+  voiceStatus.textContent = recordMode === "auto" ? "Je vous écoute..." : "Prêt. Maintenez le micro appuyé pour parler.";
+  modeBtn.textContent = recordMode === "auto" ? "Auto" : "Manuel";
+  armMic();
 }
 
 function closeVoiceScreen() {
   voiceScreen.classList.remove("active");
+  retryArmed = false;
 }
+
+voiceCircle.addEventListener("click", () => {
+  if (retryArmed && recordMode === "auto") startVoiceCapture();
+});
 
 function debugLog(text) {
   fetch("/debug", {
@@ -180,21 +507,22 @@ function pickMimeType() {
 function confirmAndSend(transcript) {
   voiceCircle.classList.remove("paused");
   voiceCircle.classList.add("done");
-  voiceStatus.textContent = "Compris, j'envoie a Titi";
+  voiceStatus.textContent = "Compris, j'envoie à Titi";
 
   let done = false;
   const finish = () => {
     if (done) return;
     done = true;
-    sendUserMessage(transcript);
+    sendUserMessage(transcript, "vocal");
 
     voiceCircle.classList.remove("done", "paused");
     voiceCircle.classList.add("thinking");
-    voiceStatus.textContent = "Titi reflechit...";
+    voiceStatus.textContent = "Titi réfléchit...";
+    disarmMic();
   };
 
   if (window.speechSynthesis) {
-    const utterance = new SpeechSynthesisUtterance("Compris, j'envoie a Titi");
+    const utterance = new SpeechSynthesisUtterance("Compris, j'envoie à Titi");
     utterance.lang = "fr-FR";
     utterance.onend = finish;
     utterance.onerror = finish;
@@ -229,26 +557,35 @@ async function transcribeAudio(blob) {
 
     if (!res.ok || !data.text || isHallucination(data.text)) {
       debugLog(`transcription vide/hallucination: ${JSON.stringify(data)}`);
-      voiceStatus.textContent = "Rien compris, reessayez.";
-      setTimeout(closeVoiceScreen, 1500);
+      voiceStatus.textContent = recordMode === "auto"
+        ? "Rien compris. Retouchez le cercle pour réessayer."
+        : "Rien compris. Maintenez le micro appuyé pour réessayer.";
+      voiceCircle.classList.remove("thinking", "paused");
+      voiceCircle.classList.add("done");
+      retryArmed = true;
       return;
     }
 
     confirmAndSend(data.text);
   } catch (err) {
     debugLog(`erreur transcription: ${err.message}`);
-    voiceStatus.textContent = "Erreur de transcription.";
-    setTimeout(closeVoiceScreen, 1500);
+    voiceStatus.textContent = recordMode === "auto"
+      ? "Erreur. Retouchez le cercle pour réessayer."
+      : "Erreur. Maintenez le micro appuyé pour réessayer.";
+    voiceCircle.classList.remove("thinking", "paused");
+    voiceCircle.classList.add("done");
+    retryArmed = true;
   }
 }
 
 function startVoiceCapture() {
   voiceCancelled = false;
   hasSpoken = false;
+  retryArmed = false;
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     openVoiceScreen();
-    voiceStatus.textContent = "Micro non supporte sur ce navigateur.";
+    voiceStatus.textContent = "Micro non supporté sur ce navigateur.";
     debugLog("getUserMedia indisponible");
     setTimeout(closeVoiceScreen, 2000);
     return;
@@ -277,10 +614,12 @@ function startVoiceCapture() {
       };
 
       recorder.onstop = () => {
+        session.stopped = true;
         clearTimeout(session.silenceTimer);
         clearTimeout(session.maxDurationTimer);
         stream.getTracks().forEach((t) => t.stop());
-        session.audioContext.close().catch(() => {});
+        if (session.audioContext) session.audioContext.close().catch(() => {});
+        armMic();
 
         if (session.discard || voiceCancelled) return;
         const blob = new Blob(chunks, { type: recorder.mimeType });
@@ -289,52 +628,102 @@ function startVoiceCapture() {
 
       recorder.start();
       debugLog(`enregistrement demarre (${recorder.mimeType})`);
+      if (recordMode === "manual") setMicRecording();
 
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
-      session.audioContext = ctx;
-      const source = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      source.connect(analyser);
-      const data = new Uint8Array(analyser.frequencyBinCount);
+      if (recordMode === "auto") {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        session.audioContext = ctx;
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
 
-      function checkVolume() {
-        if (currentSession !== session || session.stopped) return;
-        analyser.getByteTimeDomainData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i++) {
-          const v = (data[i] - 128) / 128;
-          sum += v * v;
+        function checkVolume() {
+          if (currentSession !== session || session.stopped) return;
+          analyser.getByteTimeDomainData(data);
+          let sum = 0;
+          for (let i = 0; i < data.length; i++) {
+            const v = (data[i] - 128) / 128;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / data.length);
+
+          if (rms > SPEECH_THRESHOLD) {
+            hasSpoken = true;
+            clearTimeout(session.silenceTimer);
+            session.silenceTimer = setTimeout(() => {
+              if (recorder.state === "recording") recorder.stop();
+            }, SILENCE_MS);
+          }
+
+          requestAnimationFrame(checkVolume);
         }
-        const rms = Math.sqrt(sum / data.length);
-
-        if (rms > SPEECH_THRESHOLD) {
-          hasSpoken = true;
-          clearTimeout(session.silenceTimer);
-          session.silenceTimer = setTimeout(() => {
-            if (recorder.state === "recording") recorder.stop();
-          }, SILENCE_MS);
-        }
-
         requestAnimationFrame(checkVolume);
-      }
-      requestAnimationFrame(checkVolume);
 
-      session.maxDurationTimer = setTimeout(() => {
-        if (recorder.state === "recording") recorder.stop();
-      }, MAX_DURATION_MS);
+        session.maxDurationTimer = setTimeout(() => {
+          if (recorder.state === "recording") recorder.stop();
+        }, MAX_DURATION_MS);
+      }
     })
     .catch((err) => {
-      debugLog(`getUserMedia refuse ou erreur: ${err.message}`);
-      voiceStatus.textContent = "Micro refuse ou indisponible.";
+      debugLog(`getUserMedia refusé ou erreur: ${err.message}`);
+      voiceStatus.textContent = "Micro refusé ou indisponible.";
       setTimeout(closeVoiceScreen, 2000);
     });
 }
 
 micBtn.addEventListener("click", () => {
   unlockAudioElement();
-  startVoiceCapture();
+  askPushPermission();
+  requestWakeLock();
+  if (recordMode === "manual") {
+    openVoiceScreen();
+  } else {
+    startVoiceCapture();
+  }
+});
+
+micHold.addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  micHold.setPointerCapture(e.pointerId);
+  if (recordMode === "manual") {
+    if (!currentSession || currentSession.stopped) {
+      unlockAudioElement();
+      startVoiceCapture();
+    }
+  }
+});
+
+function stopManualRecording() {
+  const s = currentSession;
+  if (s && !s.stopped && s.recorder && s.recorder.state === "recording") {
+    s.recorder.stop();
+  }
+}
+
+micHold.addEventListener("pointerup", () => {
+  if (recordMode === "manual") stopManualRecording();
+});
+
+micHold.addEventListener("pointercancel", () => {
+  if (recordMode === "manual") stopManualRecording();
+});
+
+micHold.addEventListener("click", () => {
+  if (recordMode === "auto" && retryArmed) startVoiceCapture();
+});
+
+modeBtn.addEventListener("click", () => {
+  if (recordMode === "auto") {
+    haltSession(currentSession);
+    setRecordMode("manual");
+    openVoiceScreen();
+  } else {
+    setRecordMode("auto");
+    startVoiceCapture();
+  }
 });
 
 function haltSession(session) {
@@ -351,25 +740,8 @@ function haltSession(session) {
   }
 }
 
-voicePause.addEventListener("click", () => {
-  if (voicePaused) {
-    voicePaused = false;
-    voicePause.textContent = "Pause micro";
-    startVoiceCapture();
-    return;
-  }
-
-  voicePaused = true;
-  voicePause.textContent = "Reprendre";
-  haltSession(currentSession);
-  voiceCircle.classList.remove("done", "thinking");
-  voiceCircle.classList.add("paused");
-  voiceStatus.textContent = "Micro en pause";
-});
-
 voiceCancel.addEventListener("click", () => {
   voiceCancelled = true;
-  voicePaused = false;
   haltSession(currentSession);
   if (currentAudio) {
     currentAudio.pause();
@@ -378,5 +750,13 @@ voiceCancel.addEventListener("click", () => {
   closeVoiceScreen();
 });
 
+restoreHistory();
+requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
 connect();
+requestWakeLock();
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch((err) => {
+    debugLog(`enregistrement service worker impossible: ${err.message}`);
+  });
+}
 debugLog(`ua: ${navigator.userAgent} | secureContext: ${window.isSecureContext} | mediaDevices: ${!!navigator.mediaDevices}`);

@@ -1,6 +1,6 @@
 ---
 description: Démarre, arrête ou vérifie l'état des 3 processus de l'assistant vocal (Node, STT Whisper, TTS Piper)
-argument-hint: start | stop | restart | status [node|stt|tts]
+argument-hint: (défaut start) | stop | restart | status [node|stt|tts]
 model: haiku
 ---
 
@@ -16,16 +16,20 @@ en écoute des messages envoyés depuis l'appli, sans action supplémentaire de 
 
 ## Procédure
 
-1. Lire `$ARGUMENTS` : premier mot = action (`start`/`stop`/`restart`/`status`, défaut `status` si
-   absent), second mot optionnel = composant ciblé (`node`/`stt`/`tts`, défaut : les 3).
+1. Lire `$ARGUMENTS` : premier mot = action (`start`/`stop`/`restart`/`status`, défaut `start` si
+   absent — appliquer la commande sans argument doit tout activer directement), second mot
+   optionnel = composant ciblé (`node`/`stt`/`tts`, défaut : les 3).
 2. Exécuter :
    ```
    py -3.11 "<dossier_de_ce_fichier>/com_manager.py" <action> [<composant>]
    ```
 3. Afficher la sortie brute du script à l'utilisateur.
-4. Si l'action est `start` : rappeler que le chargement des modèles (Whisper, Piper) prend
+4. Si l'action est `start` ou `restart` (composant `node` inclus) : la ligne `Lien appli : ...`
+   affichée par le script est le lien direct à donner à l'utilisateur pour ouvrir l'appli sur son
+   téléphone (token déjà inclus). Rappeler que le chargement des modèles (Whisper, Piper) prend
    10 à 20 secondes avant que le serveur Node ne soit réellement utilisable, même si le script
-   rapporte les process comme lancés immédiatement.
+   rapporte les process comme lancés immédiatement. Si la ligne `[ATTENTION]` apparaît à la place
+   (AUTH_TOKEN et/ou TUNNEL_URL absents de `.env`), le signaler à l'utilisateur au lieu du lien.
 5. Si l'action est `stop` ou `restart` : le script utilise `taskkill /T` pour tuer aussi le
    processus enfant réel (le lanceur `py -3.11` spawn un `python3.11.exe` distinct) — ne jamais
    appeler `taskkill` manuellement sans `/T` sur ces PID.
@@ -38,7 +42,7 @@ en écoute des messages envoyés depuis l'appli, sans action supplémentaire de 
       (échec silencieux accepté si le Monitor n'existait déjà plus).
    2. Lancer un nouveau Monitor :
       ```
-      command: cd "<dossier_de_ce_fichier>/../voice-code-bridge/server" && tail -f -n 0 messages.log
+      command: cd "<dossier_de_ce_fichier>/../voice-code-bridge/server" && tail -f --retry -n 0 messages.log
       persistent: true
       ```
    3. Écrire le `task_id` retourné dans `<dossier_de_ce_fichier>/monitor.lock` (écrasant tout

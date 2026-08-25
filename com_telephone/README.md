@@ -27,6 +27,13 @@ python _commands/com_manager.py start
 ```
 Démarre les 3 processus (STT, TTS, puis Node) et active la surveillance de `messages.log`.
 
+## Règle absolue : deux canaux distincts
+La conversation Claude Code (terminal/IDE) et l'appli téléphone sont deux canaux séparés. Répondre
+dans l'un ne transmet rien à l'autre. Dès qu'un message vient de `messages.log` (donc du téléphone),
+la réponse doit systématiquement passer aussi par `POST /send` — même si elle est déjà écrite dans
+la conversation Claude Code. Oubli déjà constaté le 2026-08-24 (correctif scroll répondu uniquement
+dans Claude Code, jamais reçu côté téléphone).
+
 ## Style des réponses (POST /send)
 L'utilisateur écoute la réponse (TTS), il ne la lit pas. Chaque message envoyé via `POST /send`
 doit être reformulé pour l'oral, pas recopié depuis un fichier ou un résultat d'outil :
