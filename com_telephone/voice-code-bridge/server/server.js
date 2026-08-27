@@ -11,7 +11,29 @@ const STT_PORT = process.env.STT_PORT || 5001;
 const TTS_PORT = process.env.TTS_PORT || 5002;
 const MOBILE_DIR = path.join(__dirname, "..", "mobile");
 const MESSAGES_LOG = path.join(__dirname, "messages.log");
-const CAPTURES_DIR = path.join(__dirname, "..", "..", "..", "..", "_docs", "captures");
+const PROJECTS_FILE = path.join(__dirname, "projects.json");
+const LOGS_DIR = path.join(__dirname, "logs");
+
+let projects;
+try {
+  projects = JSON.parse(fs.readFileSync(PROJECTS_FILE, "utf8"));
+} catch (err) {
+  console.error(`projects.json illisible (${err.message}). Copier projects.example.json et l'adapter.`);
+  process.exit(1);
+}
+if (!Array.isArray(projects) || projects.length === 0) {
+  console.error("projects.json doit etre un tableau non vide.");
+  process.exit(1);
+}
+const DEFAULT_PROJECT = projects[0];
+fs.mkdirSync(LOGS_DIR, { recursive: true });
+
+function resolveProject(id) {
+  return projects.find((p) => p && p.id === id) || null;
+}
+function projectLog(project) {
+  return path.join(__dirname, project.log);
+}
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -53,69 +75,44 @@ function saveSubs() {
 }
 loadSubs();
 
-let lastMessage = null;
+const lastMessages = new Map();
 
-const SALUTATIONS_FILE = path.join(__dirname, "salutations.json");
-let salutations = [];
-try {
-  salutations = JSON.parse(fs.readFileSync(SALUTATIONS_FILE, "utf8"));
-} catch {
-  salutations = [];
+function logLine(text) {
+  fs.appendFile(MESSAGES_LOG, `${new Date().toISOString()}\t[DEBUG] ${text}\n`, () => {});
 }
 
-const GREETING_RE = /^(bonjour|salut|coucou|hello|hey|yo|bonsoir)\b/i;
-
-function replyWithGreeting(ws) {
-  if (salutations.length === 0) return;
-  const text = salutations[Math.floor(Math.random() * salutations.length)];
-
-  fs.appendFile(MESSAGES_LOG, `${new Date().toISOString()}\t[AUTO] ${text}\n`, () => {});
-
-  const ttsReq = http.request({
-    host: "127.0.0.1",
-    port: TTS_PORT,
-    path: "/synthesize",
-    method: "POST",
-    headers: { "Content-Type": "application/json" }
-  }, (ttsRes) => {
-    const chunks = [];
-    ttsRes.on("data", (chunk) => chunks.push(chunk));
-    ttsRes.on("end", () => {
-      const audioMime = ttsRes.headers["content-type"] || "audio/wav";
-      const audioB64 = Buffer.concat(chunks).toString("base64");
-      if (ws.readyState === ws.OPEN) {
-        ws.send(JSON.stringify({ type: "assistant.text", text }));
-        ws.send(JSON.stringify({ type: "assistant.audio", audio: audioB64, mime: audioMime }));
-        ws.send(JSON.stringify({ type: "state", state: "listening" }));
-      }
-    });
-  });
-
-  ttsReq.on("error", () => {
-    if (ws.readyState === ws.OPEN) {
-      ws.send(JSON.stringify({ type: "assistant.text", text }));
-      ws.send(JSON.stringify({ type: "state", state: "listening" }));
-    }
-  });
-
-  ttsReq.end(JSON.stringify({ text }));
-}
-
-function sendPushNotification(text) {
-  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return Promise.resolve({ skipped: true, results: [] });
-  const payload = JSON.stringify({ title: "Assistant", body: text });
+function sendPushNotification(text, title) {
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+    logLine("push ignore: VAPID non configure");
+    return Promise.resolve({ skipped: true, results: [] });
+  }
+  if (pushSubs.size === 0) {
+    logLine("push ignore: aucune souscription enregistree");
+    return Promise.resolve({ skipped: true, results: [] });
+  }
+  const payload = JSON.stringify({ title: title || "Assistant", body: text });
   const jobs = [...pushSubs.values()].map((sub) => {
     return webpush.sendNotification(sub, payload, { TTL: 300 })
       .then((res) => ({ endpoint: sub.endpoint, statusCode: res.statusCode }))
       .catch((err) => {
-        if (err.statusCode === 404 || err.statusCode === 410) {
+        const staleKey = err.statusCode === 400 && String(err.body || "").includes("VapidPkHashMismatch");
+        if (err.statusCode === 404 || err.statusCode === 410 || staleKey) {
           pushSubs.delete(sub.endpoint);
           saveSubs();
         }
         return { endpoint: sub.endpoint, error: err.statusCode || err.message, body: String(err.body || "").slice(0, 300) };
       });
   });
-  return Promise.all(jobs).then((results) => ({ count: jobs.length, results }));
+  return Promise.all(jobs).then((results) => {
+    for (const r of results) {
+      if (r.error) {
+        logLine(`push echec (${r.endpoint.slice(-12)}): ${r.error} ${r.body}`);
+      } else {
+        logLine(`push envoye (${r.endpoint.slice(-12)}): ${r.statusCode}`);
+      }
+    }
+    return { count: jobs.length, results };
+  });
 }
 
 const MIME_TYPES = {
@@ -165,15 +162,30 @@ const httpServer = http.createServer((req, res) => {
     let body = "";
     req.on("data", (chunk) => { body += chunk; });
     req.on("end", () => {
-      let text, mode, awaitValidation;
+      let text, mode, awaitValidation, options, recommended, project;
       try {
         const parsed = JSON.parse(body);
         text = parsed.text;
         mode = parsed.mode;
         awaitValidation = !!parsed.awaitValidation;
+        options = Array.isArray(parsed.options) ? parsed.options.filter((o) => typeof o === "string") : null;
+        recommended = typeof parsed.recommended === "string" ? parsed.recommended : null;
+        project = resolveProject(parsed.project);
       } catch {
         res.writeHead(400);
         res.end("Corps invalide");
+        return;
+      }
+
+      if (!project) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "champ 'project' manquant ou inconnu", projets: projects.map((p) => p.id) }));
+        return;
+      }
+
+      if (typeof text !== "string" || !text.trim()) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "champ 'text' manquant ou vide (cle attendue: 'text')" }));
         return;
       }
 
@@ -181,16 +193,16 @@ const httpServer = http.createServer((req, res) => {
         let sent = 0;
         wss.clients.forEach((client) => {
           if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify({ type: "assistant.text", text, awaitValidation }));
+            client.send(JSON.stringify({ type: "assistant.text", project: project.id, text, awaitValidation, options, recommended }));
             client.send(JSON.stringify({ type: "state", state: "listening" }));
             sent++;
           }
         });
         if (sent === 0) {
-          lastMessage = { text, audio: null, mime: null, awaitValidation };
-          sendPushNotification(text).catch(() => {});
+          lastMessages.set(project.id, { text, audio: null, mime: null, awaitValidation, options, recommended });
+          sendPushNotification(text, `${project.label} · Assistant`).catch(() => {});
         } else {
-          lastMessage = null;
+          lastMessages.delete(project.id);
         }
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ sent }));
@@ -213,17 +225,17 @@ const httpServer = http.createServer((req, res) => {
           let sent = 0;
           wss.clients.forEach((client) => {
             if (client.readyState === client.OPEN) {
-              client.send(JSON.stringify({ type: "assistant.text", text, awaitValidation }));
-              client.send(JSON.stringify({ type: "assistant.audio", audio: audioB64, mime: audioMime }));
+              client.send(JSON.stringify({ type: "assistant.text", project: project.id, text, awaitValidation, options, recommended }));
+              client.send(JSON.stringify({ type: "assistant.audio", project: project.id, audio: audioB64, mime: audioMime }));
               sent++;
             }
           });
 
           if (sent === 0) {
-            lastMessage = { text, audio: audioB64, mime: audioMime, awaitValidation };
-            sendPushNotification(text).catch(() => {});
+            lastMessages.set(project.id, { text, audio: audioB64, mime: audioMime, awaitValidation, options, recommended });
+            sendPushNotification(text, `${project.label} · Assistant`).catch(() => {});
           } else {
-            lastMessage = null;
+            lastMessages.delete(project.id);
           }
 
           res.writeHead(200, { "Content-Type": "application/json" });
@@ -235,16 +247,16 @@ const httpServer = http.createServer((req, res) => {
         let sent = 0;
         wss.clients.forEach((client) => {
           if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify({ type: "assistant.text", text, awaitValidation }));
+            client.send(JSON.stringify({ type: "assistant.text", project: project.id, text, awaitValidation, options, recommended }));
             client.send(JSON.stringify({ type: "state", state: "listening" }));
             sent++;
           }
         });
         if (sent === 0) {
-          lastMessage = { text, audio: null, mime: null, awaitValidation };
-          sendPushNotification(text).catch(() => {});
+          lastMessages.set(project.id, { text, audio: null, mime: null, awaitValidation, options, recommended });
+          sendPushNotification(text, `${project.label} · Assistant`).catch(() => {});
         } else {
-          lastMessage = null;
+          lastMessages.delete(project.id);
         }
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ sent, tts: "indisponible" }));
@@ -389,6 +401,17 @@ const httpServer = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === "GET" && req.url.split("?")[0] === "/projects") {
+    if (!isAuthed(req)) {
+      res.writeHead(401);
+      res.end("Non autorise");
+      return;
+    }
+    res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    res.end(JSON.stringify(projects.map((p) => ({ id: p.id, label: p.label }))));
+    return;
+  }
+
   if (!isAuthed(req)) {
     res.writeHead(401);
     res.end("Non autorise");
@@ -435,22 +458,30 @@ const wss = new WebSocketServer({
 wss.on("connection", (ws) => {
   console.log(`[${new Date().toISOString()}] Client connecte`);
 
+  ws.isAlive = true;
+  ws.on("pong", () => { ws.isAlive = true; });
+
   const keepAlive = setInterval(() => {
-    if (ws.readyState === ws.OPEN) {
-      ws.ping();
+    if (ws.readyState !== ws.OPEN) return;
+    if (!ws.isAlive) {
+      logLine("connexion morte detectee (pas de pong), fermeture");
+      ws.terminate();
+      return;
     }
+    ws.isAlive = false;
+    ws.ping();
   }, 20000);
 
   ws.send(JSON.stringify({ type: "state", state: "listening" }));
 
-  let firstMessage = true;
-
-  if (lastMessage) {
-    ws.send(JSON.stringify({ type: "assistant.text", text: lastMessage.text, awaitValidation: lastMessage.awaitValidation }));
-    if (lastMessage.audio) {
-      ws.send(JSON.stringify({ type: "assistant.audio", audio: lastMessage.audio, mime: lastMessage.mime }));
+  if (lastMessages.size > 0) {
+    for (const [pid, m] of lastMessages) {
+      ws.send(JSON.stringify({ type: "assistant.text", project: pid, text: m.text, awaitValidation: m.awaitValidation, options: m.options, recommended: m.recommended }));
+      if (m.audio) {
+        ws.send(JSON.stringify({ type: "assistant.audio", project: pid, audio: m.audio, mime: m.mime }));
+      }
     }
-    lastMessage = null;
+    lastMessages.clear();
   }
 
   ws.on("message", (raw) => {
@@ -470,44 +501,45 @@ wss.on("connection", (ws) => {
     }
 
     if (msg.type === "user.message") {
+      const project = resolveProject(msg.project) || DEFAULT_PROJECT;
+      if (!resolveProject(msg.project)) {
+        logLine(`user.message projet inconnu (${msg.project}), defaut ${project.id}`);
+      }
       const channel = msg.channel === "vocal" ? "vocal" : "texte";
       const line = `${new Date().toISOString()}\t${msg.text}\t[canal:${channel}]\n`;
-      const isGreetingTrigger = firstMessage && GREETING_RE.test((msg.text || "").trim());
-      firstMessage = false;
 
-      fs.appendFile(MESSAGES_LOG, line, () => {
+      fs.appendFile(projectLog(project), line, () => {
         ws.send(JSON.stringify({ type: "message.ack", id: msg.id }));
       });
 
       ws.send(JSON.stringify({ type: "state", state: "processing" }));
-
-      if (isGreetingTrigger) {
-        replyWithGreeting(ws);
-      }
     }
 
     if (msg.type === "user.image") {
       const match = /^data:([^;]+);base64,(.+)$/.exec(msg.data || "");
       if (!match) return;
+      const project = resolveProject(msg.project) || DEFAULT_PROJECT;
       const mime = match[1];
       const b64 = match[2];
       const ext = mime.split("/")[1] || "png";
-      fs.mkdirSync(CAPTURES_DIR, { recursive: true });
+      fs.mkdirSync(project.captures, { recursive: true });
       const filename = `${new Date().toISOString().replace(/[:.]/g, "-")}.${ext}`;
-      fs.writeFile(path.join(CAPTURES_DIR, filename), Buffer.from(b64, "base64"), () => {});
+      const target = path.join(project.captures, filename);
+      fs.writeFile(target, Buffer.from(b64, "base64"), () => {});
 
       const caption = msg.caption ? ` ${msg.caption}` : "";
-      const line = `${new Date().toISOString()}\t[IMAGE]${caption} -> _docs/captures/${filename}\n`;
-      fs.appendFile(MESSAGES_LOG, line, () => {});
+      const line = `${new Date().toISOString()}\t[IMAGE]${caption} -> ${target}\n`;
+      fs.appendFile(projectLog(project), line, () => {});
 
       ws.send(JSON.stringify({ type: "state", state: "processing" }));
       return;
     }
 
     if (msg.type === "user.validation") {
+      const project = resolveProject(msg.project) || DEFAULT_PROJECT;
       const label = msg.value === "ok" ? "Validation : ok" : "Validation : a corriger";
       const line = `${new Date().toISOString()}\t${label}\n`;
-      fs.appendFile(MESSAGES_LOG, line, () => {});
+      fs.appendFile(projectLog(project), line, () => {});
 
       ws.send(JSON.stringify({ type: "state", state: "processing" }));
     }

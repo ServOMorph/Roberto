@@ -23,11 +23,40 @@ const corrBtn = document.getElementById("corrBtn");
 const voiceValidation = document.getElementById("voiceValidation");
 const voiceValidBtn = document.getElementById("voiceValidBtn");
 const voiceCorrBtn = document.getElementById("voiceCorrBtn");
+const choiceBar = document.getElementById("choiceBar");
+const projectBar = document.getElementById("projectBar");
 
 function showValidationButtons(show) {
   validationBar.classList.toggle("visible", show);
   voiceValidation.classList.toggle("visible", show);
 }
+
+function showChoiceButtons(options, recommended) {
+  choiceBar.innerHTML = "";
+  if (!options || !options.length) {
+    choiceBar.classList.remove("visible");
+    return;
+  }
+  for (const label of options) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "choiceBtn" + (label === recommended ? " recommended" : "");
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      choiceBar.classList.remove("visible");
+      choiceBar.innerHTML = "";
+      sendUserMessage(label, "texte");
+    });
+    choiceBar.appendChild(btn);
+  }
+  choiceBar.classList.add("visible");
+}
+
+let projects = [];
+let currentProject = null;
+try {
+  currentProject = localStorage.getItem("currentProject") || null;
+} catch {}
 
 let ws = null;
 let reconnectTimer = null;
@@ -69,7 +98,7 @@ function setMicRecording() {
 
 const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
-const VAPID_PUBLIC_KEY = "BKC6aqByutnydUfVxi7BuOtucfm-ikUf0HHmmbLoFilbSInDVY4RdaGc2yQ_wMLkMmG9xz3BB2oVZwp7hcgW-XA";
+const VAPID_PUBLIC_KEY = "BGh9SgMiThjIktBHR4dsATPFviTWnxqDQe3nAABxk2ZJUVwa8VxEdiur3pHUUX3pxF4s5aoJgmQsy7U8YpwzSJ0";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -87,13 +116,14 @@ async function enablePushNotifications() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || Notification.permission !== "granted") return;
   try {
     const reg = await navigator.serviceWorker.ready;
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      await existing.unsubscribe();
     }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
     await fetch("/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -125,9 +155,21 @@ async function requestWakeLock() {
   } catch {}
 }
 
+function ensureConnected() {
+  if (!ws || (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING)) {
+    clearTimeout(reconnectTimer);
+    connect();
+  }
+}
+
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") requestWakeLock();
+  if (document.visibilityState === "visible") {
+    requestWakeLock();
+    ensureConnected();
+  }
 });
+
+window.addEventListener("pageshow", ensureConnected);
 
 function unlockAudioElement() {
   if (audioUnlocked) return;
@@ -188,25 +230,75 @@ function hideThinking() {
   thinkingEl = null;
 }
 
-const HISTORY_KEY = "chatHistory";
+const HISTORY_PREFIX = "chatHistory_";
 const MAX_HISTORY = 50;
 
-function pushHistory(entry) {
+function histKey(projectId) {
+  return HISTORY_PREFIX + (projectId || currentProject || "default");
+}
+
+function pushHistory(entry, projectId) {
+  const key = histKey(projectId);
   let history = [];
   try {
-    history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    history = JSON.parse(localStorage.getItem(key)) || [];
   } catch {}
   history.push(entry);
   if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    localStorage.setItem(key, JSON.stringify(history));
   } catch {}
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  try {
+    document.execCommand("copy");
+  } catch {}
+  document.body.removeChild(textarea);
+}
+
+function copyText(text, btn) {
+  const markCopied = () => {
+    btn.classList.add("copied");
+    btn.textContent = "✓";
+    setTimeout(() => {
+      btn.classList.remove("copied");
+      btn.textContent = "⧉";
+    }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(markCopied).catch(() => {
+      fallbackCopy(text);
+      markCopied();
+    });
+  } else {
+    fallbackCopy(text);
+    markCopied();
+  }
+}
+
+function addCopyButton(bubbleEl, text) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "copyBtn";
+  btn.textContent = "⧉";
+  btn.setAttribute("aria-label", "Copier le message");
+  btn.addEventListener("click", () => copyText(text, btn));
+  bubbleEl.appendChild(btn);
 }
 
 function renderTextBubble(role, text) {
   const el = document.createElement("div");
   el.className = `bubble ${role}`;
   el.textContent = text;
+  if (role === "assistant") addCopyButton(el, text);
   chat.appendChild(el);
   chat.scrollTop = chat.scrollHeight;
 }
@@ -268,7 +360,7 @@ function addImageBubble(role, dataUrl, caption) {
 function restoreHistory() {
   let history = [];
   try {
-    history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    history = JSON.parse(localStorage.getItem(histKey())) || [];
   } catch {}
   for (const entry of history) {
     if (entry.type === "image") {
@@ -280,6 +372,15 @@ function restoreHistory() {
 }
 
 function connect() {
+  if (ws) {
+    try {
+      ws.onopen = ws.onclose = ws.onerror = ws.onmessage = null;
+      ws.close();
+    } catch {}
+    ws = null;
+  }
+  clearTimeout(reconnectTimer);
+
   ws = new WebSocket(wsUrl());
 
   ws.onopen = () => {
@@ -304,10 +405,18 @@ function connect() {
     } else if (msg.type === "message.ack") {
       markMessageDelivered(msg.id);
     } else if (msg.type === "assistant.text") {
+      if (typeof msg.text !== "string" || !msg.text.trim()) return;
+      if (msg.project && msg.project !== currentProject) {
+        pushHistory({ type: "text", role: "assistant", text: msg.text }, msg.project);
+        markProjectNews(msg.project);
+        return;
+      }
       hideThinking();
       addBubble("assistant", msg.text);
       showValidationButtons(!!msg.awaitValidation);
+      showChoiceButtons(msg.options, msg.recommended);
     } else if (msg.type === "assistant.audio") {
+      if (msg.project && msg.project !== currentProject) return;
       playAssistantAudio(msg.audio, msg.mime);
     }
   };
@@ -356,7 +465,7 @@ function sendUserMessage(text, channel) {
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
   const id = `u${Date.now()}_${++messageCounter}`;
   addUserMessageBubble(text, id);
-  ws.send(JSON.stringify({ type: "user.message", text, channel: channel || "texte", id }));
+  ws.send(JSON.stringify({ type: "user.message", text, channel: channel || "texte", id, project: currentProject }));
 }
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -372,7 +481,7 @@ function sendUserImage(file) {
   reader.onload = () => {
     const dataUrl = reader.result;
     addImageBubble("user", dataUrl, caption);
-    ws.send(JSON.stringify({ type: "user.image", data: dataUrl, caption }));
+    ws.send(JSON.stringify({ type: "user.image", data: dataUrl, caption, project: currentProject }));
     textInput.value = "";
   };
   reader.onerror = () => debugLog("lecture image echouee");
@@ -410,7 +519,7 @@ statusBtn.addEventListener("click", () => {
 resetBtn.addEventListener("click", () => {
   chat.innerHTML = "";
   try {
-    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(histKey());
   } catch {}
 });
 imgInput.addEventListener("change", () => {
@@ -421,7 +530,7 @@ imgInput.addEventListener("change", () => {
 
 function sendValidation(value) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ type: "user.validation", value }));
+  ws.send(JSON.stringify({ type: "user.validation", value, project: currentProject }));
 }
 
 function startCorrectionCapture() {
@@ -466,6 +575,7 @@ voiceCorrBtn.addEventListener("click", () => {
 
 composer.addEventListener("submit", (e) => {
   e.preventDefault();
+  askPushPermission();
   const text = textInput.value.trim();
   sendUserMessage(text);
   textInput.value = "";
@@ -750,10 +860,71 @@ voiceCancel.addEventListener("click", () => {
   closeVoiceScreen();
 });
 
-restoreHistory();
-requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
-connect();
+function renderProjectBar() {
+  projectBar.innerHTML = "";
+  if (projects.length < 2) return;
+  for (const p of projects) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "projectBtn" + (p.id === currentProject ? " active" : "");
+    btn.dataset.project = p.id;
+    btn.textContent = p.label;
+    btn.addEventListener("click", () => switchProject(p.id));
+    projectBar.appendChild(btn);
+  }
+}
+
+function markProjectNews(projectId) {
+  for (const btn of projectBar.children) {
+    if (btn.dataset.project === projectId) btn.classList.add("hasNews");
+  }
+}
+
+function switchProject(id) {
+  if (id === currentProject) return;
+  currentProject = id;
+  try {
+    localStorage.setItem("currentProject", id);
+  } catch {}
+  chat.innerHTML = "";
+  hideThinking();
+  showValidationButtons(false);
+  showChoiceButtons(null);
+  restoreHistory();
+  for (const btn of projectBar.children) {
+    const isActive = btn.dataset.project === id;
+    btn.classList.toggle("active", isActive);
+    if (isActive) btn.classList.remove("hasNews");
+  }
+  requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+}
+
+async function loadProjects() {
+  try {
+    const res = await fetch("/projects", { cache: "no-store" });
+    projects = await res.json();
+  } catch {
+    projects = [];
+  }
+  if (!Array.isArray(projects) || !projects.length) {
+    projects = [{ id: "projet", label: "Projet" }];
+  }
+  if (!projects.some((p) => p.id === currentProject)) {
+    currentProject = projects[0].id;
+  }
+  try {
+    localStorage.setItem("currentProject", currentProject);
+  } catch {}
+  renderProjectBar();
+}
+
+loadProjects().then(() => {
+  restoreHistory();
+  requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+  connect();
+});
 requestWakeLock();
+askPushPermission();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch((err) => {
     debugLog(`enregistrement service worker impossible: ${err.message}`);

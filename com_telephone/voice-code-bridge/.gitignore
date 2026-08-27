@@ -1,6 +1,8 @@
 node_modules/
 server/voices/
 server/messages.log
+server/logs/
+server/projects.json
 server/.env
 *.wav
 

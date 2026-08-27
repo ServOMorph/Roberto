@@ -53,6 +53,9 @@ dans l'URL. `POST /send` (utilisé par l'agent Claude Code local) n'est accessib
 
 ## Traitement des messages
 
-Le serveur ne répond pas automatiquement : chaque message utilisateur est journalisé dans
-`server/messages.log`. Un agent Claude Code surveille ce fichier et répond via une requête HTTP
-`POST /send` (`{"text": "..."}`), qui synthétise l'audio et le pousse au client connecté.
+Le serveur ne répond pas automatiquement. Le pont est multi-projets (`server/projects.json`) :
+chaque message utilisateur est journalisé dans `server/logs/messages_<projet>.log` selon le champ
+`project` envoyé par la PWA. Un agent Claude Code par projet surveille son propre log et répond via
+`POST /send` (`{"text": "...", "project": "<id>"}` — `project` obligatoire, 400 sinon), qui
+synthétise l'audio et le pousse au client connecté. `server/messages.log` (sans suffixe) ne reçoit
+plus que les lignes `[DEBUG]`. Endpoint `GET /projects` : liste `[{id,label}]` pour la PWA.
