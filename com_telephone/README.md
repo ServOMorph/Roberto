@@ -38,7 +38,26 @@ les projets (`id`, `label`, `racine`, `log`, `captures`). Routage :
 - Chaque session Claude Code surveille **un seul** log (`messages_<id>.log`) via son propre Monitor.
 - `messages.log` (sans suffixe) ne contient plus que les lignes `[DEBUG]`.
 
-Déploiement d'un projet raccordé : cf. `DEPLOYMENTS.md`.
+## Initialiser un projet
+
+Roberto est le projet **hôte** (il fait tourner le pont) et le **template de référence**. Pour
+installer `com_telephone` dans un autre projet, depuis une session Claude Code dans Roberto :
+
+```
+/com_telephone_init <projet-cible> <mode>
+```
+
+- **`raccorde`** (défaut) : le projet cible utilise le pont partagé de Roberto. Aucune copie du
+  serveur — la commande crée un README de raccordement, une commande `/roberto` côté cible, ajoute
+  une entrée au registre `voice-code-bridge/server/projects.json`, la section CLAUDE.md, et une
+  ligne dans `DEPLOYMENTS.md`. Puis, dans une session Claude du projet cible : `/roberto` met la
+  session en écoute, et on sélectionne le projet dans la PWA.
+- **`autonome`** : copie complète et indépendante du serveur (modèle `creazik_v2`) — ports, `.env`
+  (AUTH_TOKEN, TUNNEL_URL, VAPID), `npm install` dédiés. Pour un projet qui ne doit pas dépendre du
+  pont Roberto.
+
+Détail de la procédure : `.claude/commands/com_telephone_init.md`. Registre des déploiements :
+`DEPLOYMENTS.md`.
 
 ## Règle absolue : deux canaux distincts
 La conversation Claude Code (terminal/IDE) et l'appli téléphone sont deux canaux séparés. Répondre
