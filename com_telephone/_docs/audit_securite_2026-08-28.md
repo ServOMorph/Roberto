@@ -14,6 +14,23 @@ Périmètre : `voice-code-bridge/` (serveur Node `server.js`, PWA `mobile/`, STT
 - STT (5001) et TTS (5002) écoutent sur `127.0.0.1` uniquement — non exposés. OK.
 - Aucun secret dans git (`.env`, `push_subs.json`, `projects.json`, `voices/` ignorés — vérifié).
 
+## État des correctifs (2026-08-28)
+
+- **S1 — CORRIGÉ** : `/send` et `/push/test` passent par `isLocalOnly()` = loopback **et**
+  absence d'en-têtes de tunnel (`x-forwarded-for`, `cf-connecting-ip`, `forwarded`, `x-real-ip`,
+  `x-forwarded-host`, `fly-client-ip`, `true-client-ip`). Testé : requête locale directe → 200,
+  requête avec `X-Forwarded-For` ou `CF-Connecting-IP` → 403.
+- **S2 — CORRIGÉ** : `oneLine()` retire `\r \n \t` de `msg.text` (user.message), `msg.caption`
+  (user.image / user.file), `client.log`, `/debug`. Testé : `text` avec `\n` + `!close` →
+  une seule ligne de log, ne commençant pas par `!`.
+- **S3 — CORRIGÉ** : extension image = `mime.split("/")[1]` filtré `[^a-z0-9]` puis tronqué à
+  8, fallback `png` ; contrôle de taille serveur (rejet hors ]0, 8 Mo]). Testé : MIME
+  `image/../../../../evil` → fichier reste dans `captures`, rien écrit ailleurs.
+- **S6 — CORRIGÉ** : `maxPayload: 12 Mo` sur le WebSocketServer.
+- **S4, S5, S7, S8 — ouverts** (voir plan d'action).
+
+---
+
 ## Constat prioritaire
 
 ### S1 — `isLoopback()` contourné par le tunnel (élevé, sous réserve du type de tunnel)

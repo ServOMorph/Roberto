@@ -199,9 +199,22 @@ function isLoopback(req) {
   return addr === "127.0.0.1" || addr === "::1" || addr === "::ffff:127.0.0.1";
 }
 
+const FORWARDED_HEADERS = ["x-forwarded-for", "x-forwarded-host", "x-real-ip", "cf-connecting-ip", "forwarded", "fly-client-ip", "true-client-ip"];
+function isProxied(req) {
+  return FORWARDED_HEADERS.some((h) => req.headers[h]);
+}
+// Endpoints "locaux" (/send, /push/test) : vraiment locaux, jamais via un tunnel.
+function isLocalOnly(req) {
+  return isLoopback(req) && !isProxied(req);
+}
+
+function oneLine(value) {
+  return String(value == null ? "" : value).replace(/[\r\n\t]+/g, " ");
+}
+
 const httpServer = http.createServer((req, res) => {
   if (req.method === "POST" && req.url === "/send") {
-    if (!isLoopback(req)) {
+    if (!isLocalOnly(req)) {
       res.writeHead(403);
       res.end("Interdit");
       return;
@@ -339,7 +352,7 @@ const httpServer = http.createServer((req, res) => {
   }
 
   if (req.method === "POST" && req.url === "/push/test") {
-    if (!isLoopback(req)) {
+    if (!isLocalOnly(req)) {
       res.writeHead(403);
       res.end("Interdit");
       return;
@@ -408,7 +421,7 @@ const httpServer = http.createServer((req, res) => {
         return;
       }
 
-      const line = `${new Date().toISOString()}\t[DEBUG] ${text}\n`;
+      const line = `${new Date().toISOString()}\t[DEBUG] ${oneLine(text)}\n`;
       fs.appendFile(MESSAGES_LOG, line, () => {});
 
       res.writeHead(200);
@@ -465,6 +478,7 @@ const httpServer = http.createServer((req, res) => {
 
 const wss = new WebSocketServer({
   server: httpServer,
+  maxPayload: 12 * 1024 * 1024,
   verifyClient: (info, callback) => {
     const cookieToken = getCookie(info.req, "auth");
     callback(!!cookieToken && timingSafeEqualStr(cookieToken, AUTH_TOKEN));
@@ -512,7 +526,7 @@ wss.on("connection", (ws) => {
     console.log("Recu:", msg);
 
     if (msg.type === "client.log") {
-      const line = `${new Date().toISOString()}\t[DEBUG] ${msg.text}\n`;
+      const line = `${new Date().toISOString()}\t[DEBUG] ${oneLine(msg.text)}\n`;
       fs.appendFile(MESSAGES_LOG, line, () => {});
       return;
     }
@@ -525,10 +539,12 @@ wss.on("connection", (ws) => {
     if (msg.type === "user.message") {
       const project = resolveProject(msg.project) || DEFAULT_PROJECT;
       if (!resolveProject(msg.project)) {
-        logLine(`user.message projet inconnu (${msg.project}), defaut ${project.id}`);
+        logLine(`user.message projet inconnu (${oneLine(msg.project)}), defaut ${project.id}`);
       }
       const channel = msg.channel === "vocal" ? "vocal" : "texte";
-      const line = `${new Date().toISOString()}\t${msg.text}\t[canal:${channel}]\n`;
+      const text = oneLine(msg.text).trim();
+      if (!text) return;
+      const line = `${new Date().toISOString()}\t${text}\t[canal:${channel}]\n`;
 
       fs.appendFile(projectLog(project), line, () => {
         ws.send(JSON.stringify({ type: "message.ack", id: msg.id }));
@@ -543,13 +559,18 @@ wss.on("connection", (ws) => {
       const project = resolveProject(msg.project) || DEFAULT_PROJECT;
       const mime = match[1];
       const b64 = match[2];
-      const ext = mime.split("/")[1] || "png";
+      const buf = Buffer.from(b64, "base64");
+      if (buf.length === 0 || buf.length > 8 * 1024 * 1024) {
+        logLine(`user.image rejete: taille ${buf.length} (${project.id})`);
+        return;
+      }
+      const ext = (mime.split("/")[1] || "png").replace(/[^a-z0-9]/gi, "").slice(0, 8) || "png";
       fs.mkdirSync(project.captures, { recursive: true });
       const filename = `${new Date().toISOString().replace(/[:.]/g, "-")}.${ext}`;
       const target = path.join(project.captures, filename);
-      fs.writeFile(target, Buffer.from(b64, "base64"), () => {});
+      fs.writeFile(target, buf, () => {});
 
-      const caption = msg.caption ? ` ${msg.caption}` : "";
+      const caption = msg.caption ? ` ${oneLine(msg.caption)}` : "";
       const line = `${new Date().toISOString()}\t[IMAGE]${caption} -> ${target}\n`;
       fs.appendFile(projectLog(project), line, () => {});
 
@@ -579,7 +600,7 @@ wss.on("connection", (ws) => {
       const target = path.join(filesDir, filename);
       fs.writeFile(target, content, () => {});
 
-      const caption = msg.caption ? ` ${msg.caption}` : "";
+      const caption = msg.caption ? ` ${oneLine(msg.caption)}` : "";
       const line = `${new Date().toISOString()}\t[FICHIER]${caption} -> ${target}\n`;
       fs.appendFile(projectLog(project), line, () => {});
 
