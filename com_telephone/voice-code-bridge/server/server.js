@@ -283,20 +283,29 @@ const httpServer = http.createServer((req, res) => {
     let body = "";
     req.on("data", (chunk) => { body += chunk; });
     req.on("end", () => {
-      let sub;
+      let payload;
       try {
-        sub = JSON.parse(body);
+        payload = JSON.parse(body);
       } catch {
         res.writeHead(400);
         res.end("Corps invalide");
         return;
       }
+      const sub = payload && payload.subscription ? payload.subscription : payload;
+      const deviceId = payload && typeof payload.deviceId === "string" ? payload.deviceId : null;
       if (!sub || !sub.endpoint) {
         res.writeHead(400);
         res.end("Abonnement invalide");
         return;
       }
-      pushSubs.set(sub.endpoint, sub);
+      if (deviceId) {
+        for (const [ep, s] of pushSubs) {
+          if (ep !== sub.endpoint && (!s.deviceId || s.deviceId === deviceId)) {
+            pushSubs.delete(ep);
+          }
+        }
+      }
+      pushSubs.set(sub.endpoint, { ...sub, deviceId });
       saveSubs();
       res.writeHead(200);
       res.end("ok");

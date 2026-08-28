@@ -66,6 +66,11 @@ dernières secondes — ceci couvre le cas iOS où l'onglet verrouillé garde un
 qu'aucun client au premier plan n'a reçu le message, il est conservé et rejoué à la reconnexion ;
 chaque message porte un `mid` pour que le client ignore les doublons (rejeu + push).
 
+Abonnements push : la PWA envoie un `deviceId` stable (localStorage) avec l'abonnement ;
+`POST /push/subscribe` supprime alors les abonnements du même `deviceId` (et les anciens sans
+`deviceId`) pour éviter l'accumulation qui provoquait des notifications en double. `push_subs.json`
+n'est pas versionné.
+
 Pièces jointes : le bouton `img` de la PWA envoie une image (journalisée `[IMAGE] -> <chemin>`,
 fichier dans `<racine-projet>/_docs/captures/`) ; le bouton `json` envoie un fichier JSON
 (validé côté client et serveur, max 8 Mo, journalisé `[FICHIER] -> <chemin>`, fichier dans

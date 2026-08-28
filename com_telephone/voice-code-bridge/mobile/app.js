@@ -147,6 +147,22 @@ function urlBase64ToUint8Array(base64String) {
 
 let pushEnabled = false;
 
+function getDeviceId() {
+  let id = null;
+  try {
+    id = localStorage.getItem("deviceId");
+  } catch {}
+  if (!id) {
+    id = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `d${Date.now()}${Math.random().toString(36).slice(2)}`;
+    try {
+      localStorage.setItem("deviceId", id);
+    } catch {}
+  }
+  return id;
+}
+
 async function enablePushNotifications() {
   if (pushEnabled) return;
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || Notification.permission !== "granted") return;
@@ -163,7 +179,7 @@ async function enablePushNotifications() {
     await fetch("/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sub)
+      body: JSON.stringify({ subscription: sub, deviceId: getDeviceId() })
     });
     pushEnabled = true;
   } catch (err) {
