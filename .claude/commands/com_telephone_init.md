@@ -33,8 +33,9 @@ template de référence). Deux modes :
      `C:\Users\raph6\Documents\ServOMorph\<projet-cible>` (cf. `D:\ServOMorph\PROJETS.md`).
    - Introuvable → s'arrêter, demander le chemin exact.
 3. `id` du projet : proposer `slug(<nom-dossier>)` (minuscules, non alphanumérique → `_`).
-   Si le pont Roberto tourne, confirmer `id` + `label` (nom lisible) via `POST /send`
-   (`project: <id-d-une-session-active>`, options courtes). Sinon demander en terminal.
+   `label` = **le nom du dossier du projet** tel quel (basename de `racine`) — c'est ce qui
+   s'affiche sur le bouton de la PWA. Si le pont Roberto tourne, confirmer `id` + `label` via
+   `POST /send` (`project: <id-d-une-session-active>`, options courtes). Sinon demander en terminal.
    Refuser un `id` déjà présent dans `projects.json`.
 4. Si `<cible>\ROBERTO\` existe et contient déjà du contenu ServOMorph : l'**analyser**, ne jamais
    le vider ; ajouter `com_telephone/` à côté.

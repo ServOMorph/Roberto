@@ -1,7 +1,7 @@
 [
   {
     "id": "mon_projet",
-    "label": "Mon Projet",
+    "label": "MonProjet",
     "racine": "D:/ServOMorph/MonProjet",
     "log": "logs/messages_mon_projet.log",
     "captures": "D:/ServOMorph/MonProjet/_docs/captures"
