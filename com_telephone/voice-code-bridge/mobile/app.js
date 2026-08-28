@@ -1006,9 +1006,18 @@ function renderProjectList() {
   }
 }
 
+function updateHomeBtnBadge() {
+  let other = false;
+  for (const id of unreadProjects) {
+    if (id !== currentProject) { other = true; break; }
+  }
+  homeBtn.classList.toggle("hasNews", other);
+}
+
 function markProjectNews(projectId) {
   unreadProjects.add(projectId);
   saveUnread();
+  updateHomeBtnBadge();
   if (isHomeView()) renderProjectList();
 }
 
@@ -1025,6 +1034,7 @@ function openProject(id) {
   } catch {}
   unreadProjects.delete(id);
   saveUnread();
+  updateHomeBtnBadge();
   projectTitle.textContent = projectLabel(id);
   chat.innerHTML = "";
   hideThinking();
@@ -1062,6 +1072,7 @@ async function loadProjects() {
 
 loadProjects().then(() => {
   projectTitle.textContent = projectLabel(currentProject);
+  updateHomeBtnBadge();
   showHome();
   connect();
 });
