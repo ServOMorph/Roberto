@@ -34,7 +34,7 @@ Faire de `D:\ServOMorph\Roberto\` l'hôte unique et le centre de pilotage de `co
 
 ---
 
-## Phase 1 — Promotion du template dans Roberto  [TODO]
+## Phase 1 — Promotion du template dans Roberto  [FAIT]
 
 - Remplacer dans `Roberto\com_telephone\` par les versions d'IA_Life :
   `voice-code-bridge/server/server.js`, `voice-code-bridge/mobile/` (index.html, app.js, sw.js),
@@ -52,7 +52,7 @@ Faire de `D:\ServOMorph\Roberto\` l'hôte unique et le centre de pilotage de `co
 **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
 Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmation.
 
-## Phase 2 — Mise en service du pont sur Roberto  [TODO]
+## Phase 2 — Mise en service du pont sur Roberto  [FAIT]
 
 - Créer `Roberto\com_telephone\voice-code-bridge\server\.env` avec les valeurs actuelles d'IA_Life
   (`AUTH_TOKEN`, `TUNNEL_URL`, `VAPID_PUBLIC`, `VAPID_PRIVATE`).
@@ -73,7 +73,7 @@ Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmati
 **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
 Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmation.
 
-## Phase 3 — Reconversion d'IA_Life en projet raccordé  [TODO]
+## Phase 3 — Reconversion d'IA_Life en projet raccordé  [FAIT]
 
 - `IA_Life\ROBERTO\com_telephone\` : supprimer `voice-code-bridge/` et l'ancien `_commands/com_manager.*`.
   Garder / créer :
@@ -92,7 +92,7 @@ Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmati
 **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
 Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmation.
 
-## Phase 4 — Commande d'init depuis Roberto  [TODO]
+## Phase 4 — Commande d'init depuis Roberto  [FAIT]
 
 - `Roberto\.claude\commands\com_telephone_init.md` : commande `<projet-cible> <mode>`,
   `mode` = `raccorde` | `autonome`.
@@ -113,7 +113,10 @@ Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmati
 **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
 Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmation.
 
-## Phase 5 — Vérification globale + nettoyage  [TODO]
+## Phase 5 — Vérification globale + nettoyage  [FAIT]
+
+> Clôturée le 2026-08-28. creazik_v2 également raccordé (plus aucune copie autonome active).
+> Reliquats suivis dans `_contexte/signals.md`.
 
 - Revue de l'état cible : Roberto (hôte + template + init), IA_Life (raccordé), TSA (raccordé),
   creazik_v2 (autonome, intact).

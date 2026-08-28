@@ -14,9 +14,11 @@ Markdown, Python (`ollama_call.py`), templates de commandes Claude Code.
 - `com_telephone/` : assistant vocal distant pour Claude Code (`voice-code-bridge/`)
 
 ## État actuel
-`com_telephone` (source) remplacé par la version validée en conditions réelles dans creazik_v2
-(push VAPID, corrections). `com_manager` affiche le lien appli (token) au démarrage et démarre
-tout par défaut sans argument. Déployé dans `D:\ServOMorph\creazik_v2\ROBERTO` et
-`D:\ServOMorph\IA_Life\ROBERTO` (convention : dossier `ROBERTO` à la racine des projets cibles).
-Registre : `com_telephone/DEPLOYMENTS.md`. En attente : test réel utilisateur (Monitor + réponse
-téléphone) côté IA_Life.
+Roberto héberge le **bridge com_tel** (serveur Node + STT + TTS, lancé par `com_manager.py`) et
+en est le template de référence. Projets raccordés : `ia_life`, `tsa`, `roberto`, `creazik_v2`
+(tous en mode raccordé, plus aucune copie autonome). PWA : écran d'accueil avec pastille de
+messages non lus, partage image + JSON, notifications fiabilisées (détection premier-plan,
+anti-doublon `mid`, un abonnement par `deviceId`). Audit sécurité :
+`com_telephone/_docs/audit_securite_2026-08-28.md` (S1-S3+S6 corrigés). Glossaire :
+`com_telephone/_docs/vocabulaire.md`. Registre : `com_telephone/DEPLOYMENTS.md`. En attente :
+validation réelle des notifications (téléphone verrouillé) et du raccordement creazik_v2.
