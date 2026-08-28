@@ -60,6 +60,12 @@ chaque message utilisateur est journalisé dans `server/logs/messages_<projet>.l
 synthétise l'audio et le pousse au client connecté. `server/messages.log` (sans suffixe) ne reçoit
 plus que les lignes `[DEBUG]`. Endpoint `GET /projects` : liste `[{id,label}]` pour la PWA.
 
+Livraison : le message est poussé en WebSocket à tous les clients connectés **et** une notification
+push est envoyée sauf si un client s'est signalé au premier plan (`client.visible`) dans les 8
+dernières secondes — ceci couvre le cas iOS où l'onglet verrouillé garde un WebSocket zombie. Tant
+qu'aucun client au premier plan n'a reçu le message, il est conservé et rejoué à la reconnexion ;
+chaque message porte un `mid` pour que le client ignore les doublons (rejeu + push).
+
 Pièces jointes : le bouton `img` de la PWA envoie une image (journalisée `[IMAGE] -> <chemin>`,
 fichier dans `<racine-projet>/_docs/captures/`) ; le bouton `json` envoie un fichier JSON
 (validé côté client et serveur, max 8 Mo, journalisé `[FICHIER] -> <chemin>`, fichier dans

@@ -78,6 +78,22 @@ function isHomeView() {
   return document.body.classList.contains("view-home");
 }
 
+let seenMids = [];
+try {
+  seenMids = JSON.parse(localStorage.getItem("seenMids")) || [];
+} catch {}
+
+function markMid(mid) {
+  if (!mid) return false;
+  if (seenMids.includes(mid)) return true;
+  seenMids.push(mid);
+  if (seenMids.length > 100) seenMids = seenMids.slice(-100);
+  try {
+    localStorage.setItem("seenMids", JSON.stringify(seenMids));
+  } catch {}
+  return false;
+}
+
 let ws = null;
 let reconnectTimer = null;
 let currentSession = null;
@@ -182,14 +198,24 @@ function ensureConnected() {
   }
 }
 
+function sendVisible() {
+  if (ws && ws.readyState === WebSocket.OPEN && document.visibilityState === "visible") {
+    try {
+      ws.send(JSON.stringify({ type: "client.visible" }));
+    } catch {}
+  }
+}
+
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     requestWakeLock();
     ensureConnected();
+    sendVisible();
   }
 });
 
 window.addEventListener("pageshow", ensureConnected);
+setInterval(sendVisible, 5000);
 
 function unlockAudioElement() {
   if (audioUnlocked) return;
@@ -429,6 +455,7 @@ function connect() {
   ws.onopen = () => {
     setConnected(true);
     clearTimeout(reconnectTimer);
+    sendVisible();
   };
 
   ws.onclose = () => {
@@ -449,6 +476,7 @@ function connect() {
       markMessageDelivered(msg.id);
     } else if (msg.type === "assistant.text") {
       if (typeof msg.text !== "string" || !msg.text.trim()) return;
+      if (markMid(msg.mid)) return;
       if (msg.project && (msg.project !== currentProject || isHomeView())) {
         pushHistory({ type: "text", role: "assistant", text: msg.text }, msg.project);
         markProjectNews(msg.project);

@@ -77,6 +77,53 @@ loadSubs();
 
 const lastMessages = new Map();
 
+const FOREGROUND_WINDOW_MS = 8000;
+let midCounter = 0;
+function nextMid() {
+  return `${Date.now().toString(36)}_${(++midCounter).toString(36)}`;
+}
+function anyClientForeground() {
+  for (const client of wss.clients) {
+    if (client.readyState === client.OPEN && Date.now() - (client.lastVisible || 0) < FOREGROUND_WINDOW_MS) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function broadcastAndNotify(project, payload) {
+  const mid = nextMid();
+  const textMsg = JSON.stringify({
+    type: "assistant.text", project: project.id, mid, text: payload.text,
+    awaitValidation: payload.awaitValidation, options: payload.options, recommended: payload.recommended
+  });
+  const audioMsg = payload.audio
+    ? JSON.stringify({ type: "assistant.audio", project: project.id, mid, audio: payload.audio, mime: payload.mime })
+    : null;
+  const stateMsg = JSON.stringify({ type: "state", state: "listening" });
+
+  let sent = 0;
+  wss.clients.forEach((client) => {
+    if (client.readyState === client.OPEN) {
+      client.send(textMsg);
+      client.send(audioMsg || stateMsg);
+      sent++;
+    }
+  });
+
+  const foreground = anyClientForeground();
+  if (foreground) {
+    lastMessages.delete(project.id);
+  } else {
+    lastMessages.set(project.id, {
+      mid, text: payload.text, audio: payload.audio || null, mime: payload.mime || null,
+      awaitValidation: payload.awaitValidation, options: payload.options, recommended: payload.recommended
+    });
+    sendPushNotification(payload.text, `${project.label} · Assistant`).catch(() => {});
+  }
+  return { sent, push: !foreground };
+}
+
 function logLine(text) {
   fs.appendFile(MESSAGES_LOG, `${new Date().toISOString()}\t[DEBUG] ${text}\n`, () => {});
 }
@@ -190,22 +237,9 @@ const httpServer = http.createServer((req, res) => {
       }
 
       if (mode === "texte") {
-        let sent = 0;
-        wss.clients.forEach((client) => {
-          if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify({ type: "assistant.text", project: project.id, text, awaitValidation, options, recommended }));
-            client.send(JSON.stringify({ type: "state", state: "listening" }));
-            sent++;
-          }
-        });
-        if (sent === 0) {
-          lastMessages.set(project.id, { text, audio: null, mime: null, awaitValidation, options, recommended });
-          sendPushNotification(text, `${project.label} · Assistant`).catch(() => {});
-        } else {
-          lastMessages.delete(project.id);
-        }
+        const r = broadcastAndNotify(project, { text, awaitValidation, options, recommended });
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ sent }));
+        res.end(JSON.stringify(r));
         return;
       }
 
@@ -222,44 +256,17 @@ const httpServer = http.createServer((req, res) => {
           const audioMime = ttsRes.headers["content-type"] || "audio/wav";
           const audioB64 = Buffer.concat(chunks).toString("base64");
 
-          let sent = 0;
-          wss.clients.forEach((client) => {
-            if (client.readyState === client.OPEN) {
-              client.send(JSON.stringify({ type: "assistant.text", project: project.id, text, awaitValidation, options, recommended }));
-              client.send(JSON.stringify({ type: "assistant.audio", project: project.id, audio: audioB64, mime: audioMime }));
-              sent++;
-            }
-          });
-
-          if (sent === 0) {
-            lastMessages.set(project.id, { text, audio: audioB64, mime: audioMime, awaitValidation, options, recommended });
-            sendPushNotification(text, `${project.label} · Assistant`).catch(() => {});
-          } else {
-            lastMessages.delete(project.id);
-          }
+          const r = broadcastAndNotify(project, { text, awaitValidation, options, recommended, audio: audioB64, mime: audioMime });
 
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ sent }));
+          res.end(JSON.stringify(r));
         });
       });
 
       ttsReq.on("error", () => {
-        let sent = 0;
-        wss.clients.forEach((client) => {
-          if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify({ type: "assistant.text", project: project.id, text, awaitValidation, options, recommended }));
-            client.send(JSON.stringify({ type: "state", state: "listening" }));
-            sent++;
-          }
-        });
-        if (sent === 0) {
-          lastMessages.set(project.id, { text, audio: null, mime: null, awaitValidation, options, recommended });
-          sendPushNotification(text, `${project.label} · Assistant`).catch(() => {});
-        } else {
-          lastMessages.delete(project.id);
-        }
+        const r = broadcastAndNotify(project, { text, awaitValidation, options, recommended });
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ sent, tts: "indisponible" }));
+        res.end(JSON.stringify({ ...r, tts: "indisponible" }));
       });
 
       ttsReq.end(JSON.stringify({ text }));
@@ -459,6 +466,7 @@ wss.on("connection", (ws) => {
   console.log(`[${new Date().toISOString()}] Client connecte`);
 
   ws.isAlive = true;
+  ws.lastVisible = 0;
   ws.on("pong", () => { ws.isAlive = true; });
 
   const keepAlive = setInterval(() => {
@@ -476,9 +484,9 @@ wss.on("connection", (ws) => {
 
   if (lastMessages.size > 0) {
     for (const [pid, m] of lastMessages) {
-      ws.send(JSON.stringify({ type: "assistant.text", project: pid, text: m.text, awaitValidation: m.awaitValidation, options: m.options, recommended: m.recommended }));
+      ws.send(JSON.stringify({ type: "assistant.text", project: pid, mid: m.mid, text: m.text, awaitValidation: m.awaitValidation, options: m.options, recommended: m.recommended }));
       if (m.audio) {
-        ws.send(JSON.stringify({ type: "assistant.audio", project: pid, audio: m.audio, mime: m.mime }));
+        ws.send(JSON.stringify({ type: "assistant.audio", project: pid, mid: m.mid, audio: m.audio, mime: m.mime }));
       }
     }
     lastMessages.clear();
@@ -497,6 +505,11 @@ wss.on("connection", (ws) => {
     if (msg.type === "client.log") {
       const line = `${new Date().toISOString()}\t[DEBUG] ${msg.text}\n`;
       fs.appendFile(MESSAGES_LOG, line, () => {});
+      return;
+    }
+
+    if (msg.type === "client.visible") {
+      ws.lastVisible = Date.now();
       return;
     }
 
