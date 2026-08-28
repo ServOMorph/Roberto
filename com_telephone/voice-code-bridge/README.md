@@ -4,6 +4,9 @@ Prototype d'assistant vocal distant pour Claude Code : PWA mobile (chat + captur
 en WebSocket à un serveur Node local, avec transcription (Whisper local) et synthèse vocale (Piper
 local). Aucune donnée envoyée en cloud.
 
+Vocabulaire de référence (com_tel, bridge, projet, raccordé, canaux étanches...) :
+`../_docs/vocabulaire.md`.
+
 ## Composants
 
 - `mobile/` : PWA (HTML/JS statique), servie par le serveur Node.
