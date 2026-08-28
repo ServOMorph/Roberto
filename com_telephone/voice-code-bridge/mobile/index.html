@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Voice Code Bridge</title>
 <style>
   :root {
@@ -36,7 +39,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px;
+    padding: calc(max(env(safe-area-inset-top, 0px), 40px) + 6px) 12px 10px;
     font-size: 13px;
     color: var(--muted);
     border-bottom: 1px solid #22252c;
@@ -50,8 +53,9 @@
     flex-shrink: 0;
   }
   #connDot.connected { background: var(--ok); }
+  #connLabel { display: none; }
   #stateLabel {
-    margin-left: auto;
+    flex-shrink: 0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 11px;
@@ -64,40 +68,80 @@
     color: var(--muted);
     font-size: 12px;
     cursor: pointer;
+    flex-shrink: 0;
   }
   #resetBtn:active { opacity: 0.7; }
 
-  #projectBar {
-    display: flex;
-    gap: 6px;
-    padding: 6px 16px;
-    border-bottom: 1px solid #22252c;
-    flex-shrink: 0;
-  }
-  #projectBar:empty { display: none; }
-  .projectBtn {
-    position: relative;
-    flex: 1;
-    background: var(--bg-alt);
+  #homeBtn {
+    background: none;
     border: 1px solid #2c303a;
     border-radius: 999px;
-    padding: 6px 12px;
+    padding: 4px 10px;
     color: var(--muted);
     font-size: 12px;
     cursor: pointer;
+    flex-shrink: 0;
   }
-  .projectBtn:active { opacity: 0.7; }
-  .projectBtn.active { color: var(--fg); border-color: var(--accent); }
-  .projectBtn.hasNews::after {
-    content: "";
-    position: absolute;
-    top: 4px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
+  #homeBtn:active { opacity: 0.7; }
+
+  #projectTitle {
+    flex: 1;
+    min-width: 0;
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #homeScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    padding: calc(env(safe-area-inset-top, 0px) + 28px) 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+    gap: 16px;
+    z-index: 40;
+    overflow-y: auto;
+  }
+  body.view-home #homeScreen { display: flex; }
+  #homeScreen h1 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--fg);
+  }
+  #projectList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .projectRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 18px;
+    background: var(--bg-alt);
+    border: 1px solid #2c303a;
+    border-radius: 14px;
+    color: var(--fg);
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .projectRow:active { opacity: 0.7; }
+  .projectRow .news {
+    margin-left: auto;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: var(--accent);
+    flex-shrink: 0;
+    display: none;
   }
+  .projectRow.hasNews .news { display: block; }
 
   #chat {
     flex: 1;
@@ -396,13 +440,18 @@
 <body>
 
   <header>
+    <button id="homeBtn" type="button">Projets</button>
     <span id="connDot"></span>
     <span id="connLabel">Déconnecté</span>
+    <span id="projectTitle"></span>
     <span id="stateLabel"></span>
     <button id="resetBtn" type="button">Reset</button>
   </header>
 
-  <div id="projectBar"></div>
+  <div id="homeScreen">
+    <h1>Projets</h1>
+    <div id="projectList"></div>
+  </div>
 
   <div id="chat"></div>
 

@@ -24,7 +24,10 @@ const voiceValidation = document.getElementById("voiceValidation");
 const voiceValidBtn = document.getElementById("voiceValidBtn");
 const voiceCorrBtn = document.getElementById("voiceCorrBtn");
 const choiceBar = document.getElementById("choiceBar");
-const projectBar = document.getElementById("projectBar");
+const homeBtn = document.getElementById("homeBtn");
+const projectTitle = document.getElementById("projectTitle");
+const homeScreen = document.getElementById("homeScreen");
+const projectList = document.getElementById("projectList");
 
 function showValidationButtons(show) {
   validationBar.classList.toggle("visible", show);
@@ -57,6 +60,21 @@ let currentProject = null;
 try {
   currentProject = localStorage.getItem("currentProject") || null;
 } catch {}
+
+let unreadProjects = new Set();
+try {
+  unreadProjects = new Set(JSON.parse(localStorage.getItem("unreadProjects")) || []);
+} catch {}
+
+function saveUnread() {
+  try {
+    localStorage.setItem("unreadProjects", JSON.stringify([...unreadProjects]));
+  } catch {}
+}
+
+function isHomeView() {
+  return document.body.classList.contains("view-home");
+}
 
 let ws = null;
 let reconnectTimer = null;
@@ -406,7 +424,7 @@ function connect() {
       markMessageDelivered(msg.id);
     } else if (msg.type === "assistant.text") {
       if (typeof msg.text !== "string" || !msg.text.trim()) return;
-      if (msg.project && msg.project !== currentProject) {
+      if (msg.project && (msg.project !== currentProject || isHomeView())) {
         pushHistory({ type: "text", role: "assistant", text: msg.text }, msg.project);
         markProjectNews(msg.project);
         return;
@@ -416,6 +434,7 @@ function connect() {
       showValidationButtons(!!msg.awaitValidation);
       showChoiceButtons(msg.options, msg.recommended);
     } else if (msg.type === "assistant.audio") {
+      if (isHomeView()) return;
       if (msg.project && msg.project !== currentProject) return;
       playAssistantAudio(msg.audio, msg.mime);
     }
@@ -860,44 +879,60 @@ voiceCancel.addEventListener("click", () => {
   closeVoiceScreen();
 });
 
-function renderProjectBar() {
-  projectBar.innerHTML = "";
-  if (projects.length < 2) return;
+function projectLabel(id) {
+  const p = projects.find((x) => x.id === id);
+  return p ? p.label : id;
+}
+
+function renderProjectList() {
+  projectList.innerHTML = "";
   for (const p of projects) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "projectBtn" + (p.id === currentProject ? " active" : "");
-    btn.dataset.project = p.id;
-    btn.textContent = p.label;
-    btn.addEventListener("click", () => switchProject(p.id));
-    projectBar.appendChild(btn);
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "projectRow" + (unreadProjects.has(p.id) ? " hasNews" : "");
+    row.dataset.project = p.id;
+    const name = document.createElement("span");
+    name.textContent = p.label;
+    row.appendChild(name);
+    const dot = document.createElement("span");
+    dot.className = "news";
+    row.appendChild(dot);
+    row.addEventListener("click", () => openProject(p.id));
+    projectList.appendChild(row);
   }
 }
 
 function markProjectNews(projectId) {
-  for (const btn of projectBar.children) {
-    if (btn.dataset.project === projectId) btn.classList.add("hasNews");
-  }
+  unreadProjects.add(projectId);
+  saveUnread();
+  if (isHomeView()) renderProjectList();
 }
 
-function switchProject(id) {
-  if (id === currentProject) return;
+function showHome() {
+  document.body.classList.add("view-home");
+  document.body.classList.remove("view-chat");
+  renderProjectList();
+}
+
+function openProject(id) {
   currentProject = id;
   try {
     localStorage.setItem("currentProject", id);
   } catch {}
+  unreadProjects.delete(id);
+  saveUnread();
+  projectTitle.textContent = projectLabel(id);
   chat.innerHTML = "";
   hideThinking();
   showValidationButtons(false);
   showChoiceButtons(null);
   restoreHistory();
-  for (const btn of projectBar.children) {
-    const isActive = btn.dataset.project === id;
-    btn.classList.toggle("active", isActive);
-    if (isActive) btn.classList.remove("hasNews");
-  }
+  document.body.classList.remove("view-home");
+  document.body.classList.add("view-chat");
   requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
 }
+
+homeBtn.addEventListener("click", showHome);
 
 async function loadProjects() {
   try {
@@ -915,12 +950,15 @@ async function loadProjects() {
   try {
     localStorage.setItem("currentProject", currentProject);
   } catch {}
-  renderProjectBar();
+  for (const id of [...unreadProjects]) {
+    if (!projects.some((p) => p.id === id)) unreadProjects.delete(id);
+  }
+  saveUnread();
 }
 
 loadProjects().then(() => {
-  restoreHistory();
-  requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+  projectTitle.textContent = projectLabel(currentProject);
+  showHome();
   connect();
 });
 requestWakeLock();
