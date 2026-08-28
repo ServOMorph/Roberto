@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { exec } = require("child_process");
 const { URL } = require("url");
 const { WebSocketServer } = require("ws");
 const webpush = require("web-push");
@@ -76,6 +77,7 @@ function saveSubs() {
 loadSubs();
 
 const lastMessages = new Map();
+let lastSleepRequest = 0;
 
 const FOREGROUND_WINDOW_MS = 8000;
 let midCounter = 0;
@@ -533,6 +535,21 @@ wss.on("connection", (ws) => {
 
     if (msg.type === "client.visible") {
       ws.lastVisible = Date.now();
+      return;
+    }
+
+    if (msg.type === "client.sleep") {
+      // TODO multi-utilisateurs : reserver au super-jeton proprietaire.
+      const now = Date.now();
+      if (now - lastSleepRequest < 5000) return;
+      lastSleepRequest = now;
+      logLine("client.sleep: mise en veille du PC demandee");
+      const cmd = process.platform === "win32"
+        ? "rundll32.exe powrprof.dll,SetSuspendState 0,1,0"
+        : "systemctl suspend";
+      exec(cmd, (err) => {
+        if (err) logLine(`client.sleep echec: ${err.message}`);
+      });
       return;
     }
 

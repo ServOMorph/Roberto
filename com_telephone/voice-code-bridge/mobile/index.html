@@ -159,6 +159,47 @@
   }
   .projectRow.hasNews .news { display: block; }
 
+  #homeActions {
+    margin-top: auto;
+    padding-top: 24px;
+  }
+  #sleepBtn {
+    width: 100%;
+    background: var(--bg-alt);
+    border: 1px solid #2c303a;
+    border-radius: 14px;
+    padding: 14px 18px;
+    color: var(--muted);
+    font-size: 15px;
+    cursor: pointer;
+  }
+  #sleepBtn:active { opacity: 0.7; }
+  #sleepConfirm {
+    display: none;
+    margin-top: 10px;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  #sleepConfirm.visible { display: flex; }
+  #sleepConfirm span {
+    flex: 1;
+    min-width: 140px;
+    color: var(--fg);
+    font-size: 14px;
+  }
+  #sleepConfirm button {
+    border: 1px solid #2c303a;
+    background: var(--bg-alt);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #sleepConfirm button:active { opacity: 0.7; }
+  #sleepYes { color: var(--err); border-color: #55232a; }
+  #sleepNo { color: var(--muted); }
+
   #chat {
     flex: 1;
     min-height: 0;
@@ -480,6 +521,14 @@
   <div id="homeScreen">
     <h1>Projets</h1>
     <div id="projectList"></div>
+    <div id="homeActions">
+      <button id="sleepBtn" type="button">Mettre le PC en veille</button>
+      <div id="sleepConfirm">
+        <span>Mettre le PC en veille ?</span>
+        <button id="sleepNo" type="button">Annuler</button>
+        <button id="sleepYes" type="button">Confirmer</button>
+      </div>
+    </div>
   </div>
 
   <div id="chat"></div>

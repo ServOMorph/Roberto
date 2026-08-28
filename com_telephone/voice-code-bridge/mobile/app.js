@@ -30,6 +30,10 @@ const homeBtn = document.getElementById("homeBtn");
 const projectTitle = document.getElementById("projectTitle");
 const homeScreen = document.getElementById("homeScreen");
 const projectList = document.getElementById("projectList");
+const sleepBtn = document.getElementById("sleepBtn");
+const sleepConfirm = document.getElementById("sleepConfirm");
+const sleepYes = document.getElementById("sleepYes");
+const sleepNo = document.getElementById("sleepNo");
 
 function showValidationButtons(show) {
   validationBar.classList.toggle("visible", show);
@@ -1021,9 +1025,16 @@ function markProjectNews(projectId) {
   if (isHomeView()) renderProjectList();
 }
 
+function resetSleepConfirm() {
+  sleepConfirm.classList.remove("visible");
+  sleepBtn.style.display = "";
+  sleepBtn.textContent = "Mettre le PC en veille";
+}
+
 function showHome() {
   document.body.classList.add("view-home");
   document.body.classList.remove("view-chat");
+  resetSleepConfirm();
   renderProjectList();
 }
 
@@ -1047,6 +1058,23 @@ function openProject(id) {
 }
 
 homeBtn.addEventListener("click", showHome);
+
+sleepBtn.addEventListener("click", () => {
+  sleepBtn.style.display = "none";
+  sleepConfirm.classList.add("visible");
+});
+sleepNo.addEventListener("click", resetSleepConfirm);
+sleepYes.addEventListener("click", () => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    try {
+      ws.send(JSON.stringify({ type: "client.sleep" }));
+    } catch {}
+  }
+  sleepConfirm.classList.remove("visible");
+  sleepBtn.style.display = "";
+  sleepBtn.textContent = "Demande de mise en veille envoyee";
+  setTimeout(resetSleepConfirm, 5000);
+});
 
 async function loadProjects() {
   try {

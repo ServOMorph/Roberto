@@ -131,6 +131,9 @@ n'imprimer que le chemin, l'utilisateur ajoute le token depuis `.env`.
   `SameSite=Strict`, mais un contrôle d'`Origin` serait une défense en profondeur).
 - `deviceId` fourni par le client dans `/push/subscribe` : un client authentifié peut purger
   les abonnements des autres appareils en rejouant un `deviceId`. Impact limité (DoS notif).
+- `client.sleep` (2026-08-29) : tout client authentifié peut mettre le PC en veille (debounce
+  5 s). Faible gravité (non destructif), mais à réserver au super-jeton propriétaire quand le
+  multi-utilisateurs sera en place (cf. `analyse_acces_externe_marie_tsa.md`).
 
 ## Friction (ergonomie)
 
