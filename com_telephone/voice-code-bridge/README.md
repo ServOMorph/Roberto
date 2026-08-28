@@ -59,3 +59,8 @@ chaque message utilisateur est journalisé dans `server/logs/messages_<projet>.l
 `POST /send` (`{"text": "...", "project": "<id>"}` — `project` obligatoire, 400 sinon), qui
 synthétise l'audio et le pousse au client connecté. `server/messages.log` (sans suffixe) ne reçoit
 plus que les lignes `[DEBUG]`. Endpoint `GET /projects` : liste `[{id,label}]` pour la PWA.
+
+Pièces jointes : le bouton `img` de la PWA envoie une image (journalisée `[IMAGE] -> <chemin>`,
+fichier dans `<racine-projet>/_docs/captures/`) ; le bouton `json` envoie un fichier JSON
+(validé côté client et serveur, max 8 Mo, journalisé `[FICHIER] -> <chemin>`, fichier dans
+`<racine-projet>/_docs/fichiers/`). L'agent lit le fichier au chemin indiqué dans le log.

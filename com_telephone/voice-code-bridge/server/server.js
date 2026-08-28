@@ -535,6 +535,36 @@ wss.on("connection", (ws) => {
       return;
     }
 
+    if (msg.type === "user.file") {
+      const project = resolveProject(msg.project) || DEFAULT_PROJECT;
+      const content = typeof msg.content === "string" ? msg.content : "";
+      if (!content) return;
+      if (Buffer.byteLength(content, "utf8") > 8 * 1024 * 1024) {
+        logLine(`user.file rejete: trop volumineux (${project.id})`);
+        return;
+      }
+      try {
+        JSON.parse(content);
+      } catch {
+        logLine(`user.file rejete: JSON invalide (${project.id})`);
+        return;
+      }
+      let base = path.basename(String(msg.name || "fichier.json")).replace(/[^\w.-]/g, "_");
+      if (!/\.json$/i.test(base)) base += ".json";
+      const filesDir = path.join(path.dirname(project.captures), "fichiers");
+      fs.mkdirSync(filesDir, { recursive: true });
+      const filename = `${new Date().toISOString().replace(/[:.]/g, "-")}__${base}`;
+      const target = path.join(filesDir, filename);
+      fs.writeFile(target, content, () => {});
+
+      const caption = msg.caption ? ` ${msg.caption}` : "";
+      const line = `${new Date().toISOString()}\t[FICHIER]${caption} -> ${target}\n`;
+      fs.appendFile(projectLog(project), line, () => {});
+
+      ws.send(JSON.stringify({ type: "state", state: "processing" }));
+      return;
+    }
+
     if (msg.type === "user.validation") {
       const project = resolveProject(msg.project) || DEFAULT_PROJECT;
       const label = msg.value === "ok" ? "Validation : ok" : "Validation : a corriger";

@@ -253,6 +253,19 @@
   }
   #imgBtn:active { opacity: 0.7; }
 
+  #fileBtn {
+    background: var(--bg-alt);
+    color: var(--fg);
+    border: 1px solid #2c303a;
+    border-radius: 999px;
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #fileBtn:active { opacity: 0.7; }
+
   #statusBtn {
     background: var(--bg-alt);
     color: var(--fg);
@@ -466,6 +479,8 @@
     <input id="textInput" type="text" placeholder="Écrire un message..." autocomplete="off">
     <input id="imgInput" type="file" accept="image/*" hidden>
     <button id="imgBtn" type="button" aria-label="Image">img</button>
+    <input id="fileInput" type="file" accept=".json,application/json" hidden>
+    <button id="fileBtn" type="button" aria-label="Fichier JSON">json</button>
     <button id="statusBtn" type="button" aria-label="Statut">?</button>
     <button id="micBtn" type="button">mic</button>
     <button id="sendBtn" type="submit">-></button>

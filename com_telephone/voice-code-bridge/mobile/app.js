@@ -8,6 +8,8 @@ const textInput = document.getElementById("textInput");
 const sendBtn = document.getElementById("sendBtn");
 const imgInput = document.getElementById("imgInput");
 const imgBtn = document.getElementById("imgBtn");
+const fileInput = document.getElementById("fileInput");
+const fileBtn = document.getElementById("fileBtn");
 const statusBtn = document.getElementById("statusBtn");
 const micBtn = document.getElementById("micBtn");
 const voiceScreen = document.getElementById("voiceScreen");
@@ -375,6 +377,27 @@ function addImageBubble(role, dataUrl, caption) {
   pushHistory({ type: "image", role, dataUrl, caption });
 }
 
+function renderFileBubble(role, name, caption) {
+  const el = document.createElement("div");
+  el.className = `bubble ${role}`;
+  const line = document.createElement("div");
+  line.textContent = `Fichier : ${name}`;
+  el.appendChild(line);
+  if (caption) {
+    const p = document.createElement("div");
+    p.textContent = caption;
+    p.style.marginTop = "6px";
+    el.appendChild(p);
+  }
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addFileBubble(role, name, caption) {
+  renderFileBubble(role, name, caption);
+  pushHistory({ type: "file", role, name, caption });
+}
+
 function restoreHistory() {
   let history = [];
   try {
@@ -383,6 +406,8 @@ function restoreHistory() {
   for (const entry of history) {
     if (entry.type === "image") {
       renderImageBubble(entry.role, entry.dataUrl, entry.caption);
+    } else if (entry.type === "file") {
+      renderFileBubble(entry.role, entry.name, entry.caption);
     } else {
       renderTextBubble(entry.role, entry.text);
     }
@@ -531,6 +556,41 @@ async function pasteImageFromClipboard() {
 }
 
 imgBtn.addEventListener("click", pasteImageFromClipboard);
+
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
+
+function sendUserFile(file) {
+  if (!file || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (file.size > MAX_FILE_BYTES) {
+    debugLog(`fichier trop volumineux: ${file.size} octets`);
+    return;
+  }
+  const caption = textInput.value.trim();
+  const reader = new FileReader();
+  reader.onload = () => {
+    const content = reader.result;
+    try {
+      JSON.parse(content);
+    } catch {
+      debugLog("fichier JSON invalide, envoi annule");
+      return;
+    }
+    const name = file.name || "fichier.json";
+    addFileBubble("user", name, caption);
+    ws.send(JSON.stringify({ type: "user.file", name, mime: file.type || "application/json", content, caption, project: currentProject }));
+    textInput.value = "";
+  };
+  reader.onerror = () => debugLog("lecture fichier echouee");
+  reader.readAsText(file);
+}
+
+fileBtn.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  fileInput.value = "";
+  sendUserFile(file);
+});
 
 statusBtn.addEventListener("click", () => {
   sendUserMessage("Que fais-tu ?", "texte");
