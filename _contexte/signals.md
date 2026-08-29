@@ -1,6 +1,19 @@
 # Signals — roberto   (MAJ 2026-08-29)
 
 ## Actions ouvertes
+- [P2|ouvert] `MACROS/` et `UI_WEB/` déplacés ici depuis `templates/roberto/` du kit
+  (claude-vibecoding-kit) le 2026-08-29, à la demande de l'utilisateur (nettoyage du kit —
+  ce template n'avait plus d'équivalent nulle part, sa source `D:\ServOMorph\Roberto2` a été
+  supprimée). Launcher pywebview (lancement de programmes, macros clavier/souris, capture de
+  coordonnées écran, communication OpenCode) jamais utilisé ni testé dans ce projet, fichiers
+  déplacés tels quels (non commités). fait quand: fonctionnement vérifié dans ce projet
+  (`python run.py`), décision prise sur son intégration (garder en l'état, fusionner avec
+  `AUTOMATISATIONS/`/`com_telephone/`, ou écarter) et changements commités. réf: `MACROS/`,
+  `UI_WEB/`, `run.py`
+- [P2|ouvert] `roadmap_workflow_quotidien.md` déplacée ici depuis le kit le 2026-08-29 (Phases 1-2
+  FAIT, Phases 3-5 TODO : score combiné priorité+envie, intégration dans `quotidien.md`, tests
+  bout en bout) — non commitée, à reprendre dans le fil de travail normal de ce projet. réf:
+  `roadmap_workflow_quotidien.md`
 - [P1|ouvert] Valider en réel les notifications push, téléphone verrouillé, après re-souscription
   de la PWA. fait quand: l'utilisateur confirme réception fiable sur écran verrouillé (5 envois
   sur 5) et aucun doublon. réf: tests_manuels.md, com_telephone/voice-code-bridge/server/server.js
@@ -26,30 +39,21 @@
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-08-29
+# Session du 2026-08-29 (suite)
 
 ## Décisions prises
-- Aucune décision structurante. Analyse « accès externe Marie -> tsa » produite puis mise en
-  attente (voir action ouverte P3 dédiée).
+- Aucune. Accès externe Marie : 4 questions identifiées, décision en attente de réponses.
 
 ## Livrables produits ou modifiés
-- PWA : pastille sur le bouton "Projets" du bandeau (signale des non-lus dans un autre projet
-  que le projet courant, en vue chat) ; bouton "Mettre le PC en veille" sur l'écran d'accueil
-  (confirmation inline Confirmer/Annuler -> message WS `client.sleep`).
-- Serveur : handler `client.sleep` (SetSuspendState Windows / systemctl suspend, debounce 5 s).
-- `com_telephone/_docs/analyse_acces_externe_marie_tsa.md` : faisabilité + 2 voies + questions.
-- `com_telephone/_docs/audit_securite_2026-08-28.md` : ligne S8 sur `client.sleep`.
-- tests_manuels.md : test réel de la mise en veille ajouté.
+- Analyse `com_telephone/_docs/analyse_acces_externe_marie_tsa.md` relue ; 4 questions
+  clarifiées pour décision (type accès, commandes !, durée, données sensibles).
 
 ## Hypothèses validées / invalidées
-- EN ATTENTE : pastille du bouton "Projets" (à confirmer en usage réel).
-- EN ATTENTE : mise en veille du PC depuis la PWA (non testable sans endormir la machine).
-- EN ATTENTE : tests de la session précédente inchangés (push tél verrouillé, raccordement
-  creazik_v2).
+- EN ATTENTE : voie accès externe Marie (multi-utilisateurs vs second serveur).
 
 ## Prochaine étape exacte
-L'utilisateur teste la pastille "Projets", la mise en veille depuis l'accueil, puis les tests en
-attente (push, creazik_v2). Ensuite : trancher la voie pour l'accès de Marie et le point S4.
+L'utilisateur répond aux 4 questions. Ensuite : trancher voie A ou B et passer à
+l'implémentation.
 
 ## Question bloquante pour la session suivante
-Aucune
+Les réponses aux 4 questions de clarification sur l'accès externe de Marie.
