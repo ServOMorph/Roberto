@@ -15,3 +15,23 @@ notifications autorisées pour la PWA.
    message est présent une seule fois (pas de doublon dû au rejeu + push).
 4. **Coupure réseau courte** : couper le wifi du téléphone 20 s pendant un `POST /send`, le
    rétablir → le message finit par arriver (rejoué à la reconnexion), une seule fois.
+
+## Mise en veille du PC depuis la PWA
+
+Pré-requis : bridge démarré, PWA rechargée.
+
+1. **Confirmation** : écran d'accueil → bouton "Mettre le PC en veille" → une barre
+   Annuler / Confirmer apparaît. "Annuler" → retour au bouton, rien ne se passe.
+2. **Déclenchement** : "Confirmer" → le PC (Windows) se met effectivement en veille dans les
+   secondes qui suivent ; la ligne `client.sleep: mise en veille du PC demandee` apparaît dans
+   `server/messages.log`.
+3. **Anti-rebond** : deux "Confirmer" à moins de 5 s d'intervalle → une seule mise en veille.
+4. **Reprise** : au réveil du PC, le bridge tourne toujours (les 3 process survivent à la veille)
+   ou, si besoin, `com_manager.py start` les relance.
+
+## Pastille du bouton "Projets" (vue chat)
+
+1. Être dans le chat d'un projet A. Faire répondre une session d'un projet B via `POST /send`
+   → une pastille bleue apparaît sur le bouton "Projets" du bandeau.
+2. Taper "Projets" → accueil → ouvrir B → revenir : la pastille du bouton disparaît une fois
+   B ouvert (plus aucun autre projet non lu).

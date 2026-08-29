@@ -1,4 +1,4 @@
-# Signals — roberto   (MAJ 2026-08-28)
+# Signals — roberto   (MAJ 2026-08-29)
 
 ## Actions ouvertes
 - [P1|ouvert] Valider en réel les notifications push, téléphone verrouillé, après re-souscription
@@ -13,50 +13,43 @@
   Piper en secours ; le README affirme l'inverse. fait quand: décision actée + code et README
   alignés (Piper par défaut, ou README corrigé). réf: com_telephone/_docs/audit_securite_2026-08-28.md
   (S4), com_telephone/voice-code-bridge/server/tts_server.py
+- [P3|ouvert] Décider la voie pour l'accès externe de Marie au projet `tsa` (multi-utilisateurs
+  dans le bridge, ou second bridge dédié). fait quand: voie choisie + 4 questions du doc tranchées.
+  réf: com_telephone/_docs/analyse_acces_externe_marie_tsa.md
 - [P3|ouvert] Traiter S5, S7, S8 de l'audit (check anti-traversée statique sans séparateur ;
   cycle de vie du token : cookie 1 an, token imprimé par com_manager, rotation non documentée ;
-  divers). fait quand: chaque constat corrigé ou explicitement écarté. réf:
-  com_telephone/_docs/audit_securite_2026-08-28.md
+  divers, dont `client.sleep` à réserver au super-jeton). fait quand: chaque constat corrigé ou
+  explicitement écarté. réf: com_telephone/_docs/audit_securite_2026-08-28.md
 - [P3|ouvert] Décider la proposition des 3 agents de dev (Bridge / PWA / Déploiement-Ops).
   fait quand: validée (agent_role.md créés) ou rejetée. réf:
   com_telephone/_docs/agents_dev_proposition.md
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-08-28
+# Session du 2026-08-29
 
 ## Décisions prises
-- Terme figé : "com_tel" (pas "Com"), "bridge" (pas "le pont"). Glossaire `_docs/vocabulaire.md`
-  (5 termes : com_tel, bridge, projet, raccordé/autonome, canaux étanches).
-- creazik_v2 raccordé au bridge ; suppression de sa copie autonome. Tous les déploiements se font
-  désormais en mode raccordé ; "autonome" conservé pour référence historique seulement.
-- Audit sécurité livré (`_docs/audit_securite_2026-08-28.md`, 8 constats). Corrigés cette session :
-  S1 (/send et /push/test refusent les requêtes proxifiées), S2 (nettoyage \r\n\t des logs),
-  S3+S6 (extension image assainie, limites de taille, maxPayload WS).
+- Aucune décision structurante. Analyse « accès externe Marie -> tsa » produite puis mise en
+  attente (voir action ouverte P3 dédiée).
 
 ## Livrables produits ou modifiés
-- PWA : écran d'accueil (liste projets + pastille non-lus persistée, bouton retour, chat = projet
-  courant seul), correctif bandeau iOS (safe-area, connLabel masqué, meta apple-mobile-web-app),
-  partage de fichier JSON (bouton, user.file, _docs/fichiers/, log [FICHIER]).
-- Notifications : détection premier-plan (client.visible), push si aucun client premier-plan < 8 s,
-  message conservé pour rejeu, `mid` anti-doublon, dédoublonnage des abonnements par `deviceId`,
-  push_subs.json vidé.
-- creazik_v2 : raccordé (README, /roberto, section CLAUDE.md, entrée projects.json, DEPLOYMENTS.md).
-- Docs : `_docs/vocabulaire.md`, `_docs/audit_securite_2026-08-28.md`, `_docs/agents_dev_proposition.md`.
-- .gitignore racine : `_docs/captures/`.
+- PWA : pastille sur le bouton "Projets" du bandeau (signale des non-lus dans un autre projet
+  que le projet courant, en vue chat) ; bouton "Mettre le PC en veille" sur l'écran d'accueil
+  (confirmation inline Confirmer/Annuler -> message WS `client.sleep`).
+- Serveur : handler `client.sleep` (SetSuspendState Windows / systemctl suspend, debounce 5 s).
+- `com_telephone/_docs/analyse_acces_externe_marie_tsa.md` : faisabilité + 2 voies + questions.
+- `com_telephone/_docs/audit_securite_2026-08-28.md` : ligne S8 sur `client.sleep`.
+- tests_manuels.md : test réel de la mise en veille ajouté.
 
 ## Hypothèses validées / invalidées
-- VALIDE : tests manuels PWA écran d'accueil + migration com_telephone (utilisateur : "Tout").
-- VALIDE : partage JSON de bout en bout (utilisateur : "Ça marche").
-- VALIDE : correctifs S1-S3 (requête forwardée -> 403, newline -> ligne unique, MIME traversal
-  -> fichier confiné dans captures).
-- EN ATTENTE : notifications push en réel, téléphone verrouillé (checklist tests_manuels.md).
-- EN ATTENTE : raccordement creazik_v2 en réel (session Claude + /roberto + aller-retour PWA).
+- EN ATTENTE : pastille du bouton "Projets" (à confirmer en usage réel).
+- EN ATTENTE : mise en veille du PC depuis la PWA (non testable sans endormir la machine).
+- EN ATTENTE : tests de la session précédente inchangés (push tél verrouillé, raccordement
+  creazik_v2).
 
 ## Prochaine étape exacte
-L'utilisateur : re-souscrire la PWA puis tester les notifications téléphone verrouillé ; ouvrir
-une session Claude Code dans creazik_v2, lancer /roberto, aller-retour sur l'onglet creazik_v2.
-Puis décider S4 (Piper par défaut ou README corrigé).
+L'utilisateur teste la pastille "Projets", la mise en veille depuis l'accueil, puis les tests en
+attente (push, creazik_v2). Ensuite : trancher la voie pour l'accès de Marie et le point S4.
 
 ## Question bloquante pour la session suivante
 Aucune

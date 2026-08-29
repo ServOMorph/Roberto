@@ -11,12 +11,15 @@ Roberto héberge le **bridge com_tel** et en est le **template de référence**.
 (Node 5000 + STT 5001 + TTS 5002) lancé via `com_telephone/_commands/com_manager.py` ; `.env`
 (AUTH_TOKEN, TUNNEL_URL, VAPID) hors git. `projects.json` (non versionné) : `ia_life`, `tsa`,
 `roberto`, `creazik_v2` — **tous raccordés**, plus aucune copie autonome active (creazik_v2
-raccordé le 2026-08-28). PWA : écran d'accueil (liste projets + pastille non-lus persistée),
-partage image + JSON (`_docs/fichiers/`), notifications fiabilisées (détection premier-plan
-`client.visible`, anti-doublon `mid`, un abonnement par `deviceId`). Sécurité : audit
-`_docs/audit_securite_2026-08-28.md` — S1-S3+S6 corrigés, S4 (TTS cloud) / S5 / S7 (token) / S8
-ouverts. Glossaire `_docs/vocabulaire.md`. Commande `/com_telephone_init <cible> <mode>`.
-Roadmap `roadmap_com_telephone_hub.md` : phases 1 à 5 FAIT.
+raccordé le 2026-08-28). PWA : écran d'accueil (liste projets + pastille non-lus persistée +
+bouton "Mettre le PC en veille" avec confirmation -> WS `client.sleep`), pastille non-lus aussi
+sur le bouton "Projets" du bandeau en vue chat, partage image + JSON (`_docs/fichiers/`),
+notifications fiabilisées (détection premier-plan `client.visible`, anti-doublon `mid`, un
+abonnement par `deviceId`). Sécurité : audit `_docs/audit_securite_2026-08-28.md` — S1-S3+S6
+corrigés, S4 (TTS cloud) / S5 / S7 (token) / S8 ouverts. Analyse accès externe (Marie -> tsa) :
+`_docs/analyse_acces_externe_marie_tsa.md`, en attente de décision. Glossaire
+`_docs/vocabulaire.md`. Commande `/com_telephone_init <cible> <mode>`. Roadmap
+`roadmap_com_telephone_hub.md` : phases 1 à 5 FAIT.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
 - 2026-08-20 : Initialisation du protocole vibecoding.

@@ -1,3 +1,14 @@
+## v0.5 — 2026-08-29
+
+### Ajouté
+- PWA : pastille de messages non lus sur le bouton "Projets" du bandeau (vue chat), signalant
+  des non-lus dans un autre projet que le projet courant.
+- PWA : bouton "Mettre le PC en veille" sur l'écran d'accueil (confirmation inline), message
+  WebSocket `client.sleep` -> le serveur lance `SetSuspendState` (Windows) / `systemctl suspend`,
+  debounce 5 s.
+- com_telephone : `_docs/analyse_acces_externe_marie_tsa.md` (faisabilité d'un canal pour une
+  personne externe limitée au projet `tsa` : deux voies + questions à trancher).
+
 ## v0.4 — 2026-08-28
 
 ### Ajouté
