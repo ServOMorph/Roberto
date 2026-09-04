@@ -12,6 +12,7 @@ if str(RACINE) not in sys.path:
     sys.path.insert(0, str(RACINE))
 
 import notifier
+import overlay
 import rapport
 
 FICHIER_ALLOWLIST = RACINE / "allowlist.txt"
@@ -406,7 +407,11 @@ def main():
         journal("queue.json introuvable")
         return 1
     donnees = charger_queue()
-    meta = executer(donnees)
+    depart = datetime.now()
+    if "--no-overlay" not in sys.argv:
+        butoir = heure_cible(depart, donnees.get("butoir", BUTOIR_DEFAUT))
+        overlay.afficher_annonce(donnees, butoir)
+    meta = executer(donnees, depart)
     chemin = rapport.generer(donnees, meta, RACINE)
     journal("rapport : {}".format(chemin))
     if "--no-push" not in sys.argv:
@@ -416,6 +421,8 @@ def main():
         )
     if "--no-open" not in sys.argv and os.name == "nt":
         os.startfile(str(chemin))
+    if "--no-overlay" not in sys.argv:
+        overlay.afficher_fin(donnees, meta)
     return 0
 
 

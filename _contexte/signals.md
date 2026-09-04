@@ -3,10 +3,26 @@
 ## Actions ouvertes
 - [P1|ouvert] Première nuit réelle du planificateur : créer la tâche planifiée Windows (heure de
   coucher à fournir), lancer `claude setup-token`, laisser tourner une nuit sur creazik_v2 avec
-  le `queue.json` d'exemple. fait quand: une nuit réelle s'est exécutée, rapport
+  le `queue.json` d'exemple. Une tentative de test supervisé ce soir (réveil de session programmé
+  pour 21:00) a été abandonnée en cours de route, sujet détourné avant l'heure cible — statut d'un
+  éventuel réveil resté programmé non vérifié. fait quand: une nuit réelle s'est exécutée, rapport
   `PLANIFICATEUR/rapport_<date>.html` lisible au réveil, aucun `git push`, commits uniquement
   locaux sur branches dédiées. réf: roadmap_planificateur_nuit.md (gate Phase 2), tests_manuels.md,
   PLANIFICATEUR/queue.json
+- [P2|ouvert] Workflow de revue de code nocturne (nouvelle demande, esquissée puis interrompue par
+  /close) : overlay fenêtré (3/4 écran, centré, boutons Fermer/Annuler) demandant le dossier projet
+  à analyser, lancement d'une analyse de code, roadmap de revue générée et stockée dans
+  `<projet cible>/ROBERTO/`, priorisée par urgence et expliquée sans jargon technique (usage prévu :
+  discussion vocale via com_telephone en voiture), roadmap validée exécutée la nuit suivante par le
+  planificateur. Aucun fichier créé, spécification à reprendre depuis zéro. fait quand: le workflow
+  est spécifié en détail (déclenchement de l'overlay, format de la roadmap de revue, intégration au
+  planificateur) et validé par l'utilisateur avant tout code. réf: [à préciser]
+- [P3|ouvert] Piste creazik_v2 explicitement reportée par l'utilisateur ("à voir plus tard") :
+  proposition de découpler les gates de phase des tests manuels perceptuels (roadmap_impl.md) et
+  d'ajouter un outil de validation automatisée façon IA_Life (`tools/run_manual_checks.py` etc., via
+  Playwright sur l'app buildée). Rien acté, rien créé côté creazik_v2. fait quand: l'utilisateur
+  relance le sujet et valide (ou écarte) la proposition. réf: creazik_v2/roadmap_impl.md,
+  creazik_v2/tests_manuels.md, IA_Life/tools/ (pattern de référence)
 - [P2|ouvert] Vérifier en réel que `git checkout -b` et `git commit` passent la liste blanche
   `--allowedTools "Bash(git:*)"` (non testé : seuls `git push` refusé et `npm run typecheck`
   autorisé l'ont été). fait quand: la tâche `typecheck` du queue.json d'exemple aboutit sans
@@ -57,34 +73,36 @@
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-09-04
+# Session du 2026-09-04 (suite)
 
 ## Décisions prises
-- Planificateur nocturne : code dans `Roberto/PLANIFICATEUR/`, confinement natif `--restricted`
-  (pas de hook maison en MVP).
-- Un run dont des outils ont été refusés = statut `refus` (échec), jamais compté comme succès.
-- Tâche interrompue par un crash = `echouee/interrompue`, aucun rejeu automatique.
-- Tâche planifiée Windows non créée cette session (heure de coucher non fixée, modif système).
-- Phase 3 poursuivie sans `/compact` ni gate Phase 2 franchi (écart de procédure assumé).
+- Overlays plein écran ajoutés au planificateur : annonce au lancement (liste des tâches, butoir,
+  bouton OK), bilan à la fin (statuts, coût, durée, bouton Fermer), flag `--no-overlay` pour les
+  désactiver.
+- Test réel programmé ce soir à 21h abandonné en cours de route : l'utilisateur a enchaîné sur
+  d'autres sujets avant l'heure cible.
+- Piste creazik_v2 (découplage gates/tests manuels) explicitement reportée par l'utilisateur.
+- Nouvelle piste (workflow de revue de code nocturne) esquissée puis interrompue par /close, aucun
+  travail commencé.
 
 ## Livrables produits ou modifiés
-- `PLANIFICATEUR/` créé : orchestrateur.py, rapport.py, tache.py (CLI), notifier.py, allowlist.txt,
-  queue.json, lancer_nuit.cmd, .gitignore, test_planificateur.py (36 tests verts).
-- `tests_manuels.md` : + tâche planifiée Windows, + nuit réelle (gate Phase 2).
-- `roadmap_planificateur_nuit.md` : Phases 1 et 2 [FAIT], Phase 3 [EN COURS] (5 items sur 6).
+- `PLANIFICATEUR/overlay.py` : créé (overlays tkinter, charte VERTIA).
+- `PLANIFICATEUR/orchestrateur.py` : appel des overlays dans `main()`, `depart` passé explicitement
+  à `executer()`.
+- `roadmap_planificateur_nuit.md` : Phase 3, item overlay coché.
+- Tests : 36/36 verts, aucune régression.
 
 ## Hypothèses validées / invalidées
-- VALIDE : confinement `--restricted` (écriture hors périmètre refusée ; `git push` refusé malgré
-  `Bash(git:*)` ; `npm run typecheck` autorisé) ; timeout + kill de l'arbre `node` ; push
-  com_telephone (HTTP 200 réel) ; `--max-budget-usd` sous abonnement.
-- INVALIDE : `sauver_queue`/`charger_queue`/`charger_allowlist` figeaient le chemin par défaut à
-  l'import -> corrigé en liaison tardive (bug trouvé par le smoke test).
-- EN ATTENTE : format de l'erreur de quota (non provocable) ; `git checkout -b` / `git commit`
-  passent-ils la liste blanche ; gate Phase 2 = une nuit réelle.
+- VALIDE : overlays plein écran lisibles et fonctionnels (confirmation visuelle explicite de
+  l'utilisateur : "overlays parfait").
+- EN ATTENTE : gate Phase 2 (nuit réelle) toujours non franchi ; workflow de revue de code nocturne
+  à spécifier de zéro.
 
 ## Prochaine étape exacte
-Fournir l'heure de coucher, créer la tâche planifiée Windows, lancer `claude setup-token`, puis
-première nuit réelle sur creazik_v2 avec le `queue.json` d'exemple.
+Clarifier si la nuit réelle du planificateur est encore visée, puis spécifier le workflow de revue
+de code nocturne (overlay sélection dossier, roadmap dans `<cible>/ROBERTO/`, triage par urgence
+sans jargon pour restitution vocale com_telephone).
 
 ## Question bloquante pour la session suivante
-Heure de coucher pour la tâche planifiée Windows.
+Le workflow de revue de code nocturne doit-il être repris en priorité, ou la nuit réelle du
+planificateur reste-t-elle l'objectif immédiat ?

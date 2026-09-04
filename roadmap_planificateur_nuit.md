@@ -150,6 +150,8 @@ Roberto/PLANIFICATEUR/
 
 Gate : NON franchi. Exige une nuit réelle sur creazik_v2 avec 2-3 tâches, rapport lisible au
 réveil (cf. tests_manuels.md « Nuit réelle »). Code et tests faits ; validation terrain en attente.
+Tentative de test supervisé le 2026-09-04 (réveil de session programmé pour 21:00) abandonnée en
+cours de route (utilisateur passé à d'autres sujets) — aucun lancement réel n'a eu lieu.
 
 **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
 Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmation.
@@ -166,6 +168,8 @@ Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmati
       (pas nécessaire à ce stade).
 - [x] Push du rapport sur le téléphone via `com_telephone` (`notifier.py`, HTTP 200 réel).
 - [ ] Ouverture à d'autres projets de la liste blanche (une ligne dans `allowlist.txt`).
+- [x] Overlays plein écran (annonce au lancement, bilan à la fin) intégrés à `orchestrateur.py`
+      (`overlay.py`, flag `--no-overlay`), testés visuellement et validés par l'utilisateur.
 
 ---
 

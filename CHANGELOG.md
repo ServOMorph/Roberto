@@ -1,3 +1,10 @@
+## v0.7 — 2026-09-04
+
+### Ajouté
+- `PLANIFICATEUR/overlay.py` : overlays plein écran (charte VERTIA) au lancement (annonce des
+  tâches, butoir, bouton OK) et à la fin (bilan des statuts, coût, durée, bouton Fermer) de
+  l'orchestrateur, désactivables via `--no-overlay`. Testés visuellement, validés par l'utilisateur.
+
 ## v0.6 — 2026-09-04
 
 ### Ajouté

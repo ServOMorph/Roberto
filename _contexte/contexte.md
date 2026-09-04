@@ -9,17 +9,14 @@ Markdown, Python (ollama_call.py), templates de commandes Claude Code
 ## État actuel (réécrit intégralement à chaque /close)
 Roberto héberge le **bridge com_tel** (serveur Node 5000 + STT 5001 + TTS 5002 via
 `com_manager.py`, `.env` hors git) et en est le template de référence ; `ia_life`, `tsa`,
-`roberto`, `creazik_v2` tous raccordés. PWA : accueil (pastille non-lus persistée, bouton veille
-PC), pastille non-lus sur bouton "Projets" en vue chat, partage image + JSON, notifications
-fiabilisées. Audit `_docs/audit_securite_2026-08-28.md` : S1-S3+S6 corrigés, S4/S5/S7/S8 ouverts.
-Nouveau chantier : **planificateur nocturne** (`PLANIFICATEUR/`, roadmap dédiée) — orchestrateur
-Python qui lance des `claude -p --restricted` la nuit, confinés par `allowlist.txt`, butoir 06:00,
-retry aveugle sur limite 5 h, rapport HTML (charte VERTIA) + push com_tel. Phases 1-2 [FAIT]
-(36 tests + validations réelles), Phase 3 [EN COURS] ; gate Phase 2 (nuit réelle) non franchi.
+`roberto`, `creazik_v2` tous raccordés. Audit `_docs/audit_securite_2026-08-28.md` : S1-S3+S6
+corrigés, S4/S5/S7/S8 ouverts. Chantier **planificateur nocturne** (`PLANIFICATEUR/`) : Phases 1-2
+[FAIT], Phase 3 [EN COURS] — overlays plein écran d'annonce/bilan ajoutés et validés visuellement ;
+gate Phase 2 (nuit réelle) toujours non franchi. Nouvelle piste évoquée, non spécifiée : workflow
+de revue de code nocturne (overlay sélection dossier, roadmap de revue dans `<cible>/ROBERTO/`,
+triage par urgence restitué par com_telephone).
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-21 : AUTH_TOKEN de com_telephone stocké dans server/.env (hors git), chargé par
-  com_manager.py avant le lancement de node — pas de secret en dur dans le code.
 - 2026-08-21 : Convention de déploiement : tout ce qui vient de ServOMorph s'installe dans un
   dossier ROBERTO à la racine du projet cible. Si le projet a déjà du contenu ServOMorph,
   l'analyser avant, ne jamais le vider.
@@ -44,3 +41,6 @@ retry aveugle sur limite 5 h, rapport HTML (charte VERTIA) + push com_tel. Phase
   sur la limite 5 h, rapport HTML (charte VERTIA) + push com_tel. Le confinement repose sur le
   harness (`--restricted` + `--allowedTools` + `--disallowedTools`), jamais sur `CLAUDE.md`.
   Un run avec outils refusés est un échec ; une tâche interrompue n'est pas rejouée.
+- 2026-09-04 : Overlays plein écran ajoutés au planificateur (`overlay.py`) : annonce au
+  lancement, bilan à la fin, désactivables via `--no-overlay`. Validés visuellement par
+  l'utilisateur.

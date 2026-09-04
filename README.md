@@ -26,8 +26,9 @@ anti-doublon `mid`, un abonnement par `deviceId`). Docs `com_telephone/_docs/` :
 
 Chantier en cours : **planificateur nocturne** (`PLANIFICATEUR/`, `roadmap_planificateur_nuit.md`) —
 lance des `claude -p --restricted` la nuit, confinés par `allowlist.txt`, butoir 06:00, retry sur
-la limite 5 h, rapport HTML + push com_tel. Phases 1-2 [FAIT] (36 tests + validations réelles),
-Phase 3 [EN COURS]. Première nuit réelle non encore faite.
+la limite 5 h, rapport HTML + push com_tel, overlays plein écran d'annonce et de bilan (validés
+visuellement). Phases 1-2 [FAIT] (36 tests + validations réelles), Phase 3 [EN COURS]. Première
+nuit réelle non encore faite.
 
 En attente (validation réelle) : notifications téléphone verrouillé, raccordement creazik_v2,
 mise en veille depuis la PWA, première nuit du planificateur.
