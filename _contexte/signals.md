@@ -1,37 +1,39 @@
 # Signals — roberto   (MAJ 2026-09-04)
 
 ## Actions ouvertes
-- [P1|ouvert] Première nuit réelle du planificateur : créer la tâche planifiée Windows (heure de
-  coucher à fournir), lancer `claude setup-token`, laisser tourner une nuit sur creazik_v2 avec
-  le `queue.json` d'exemple. Une tentative de test supervisé ce soir (réveil de session programmé
-  pour 21:00) a été abandonnée en cours de route, sujet détourné avant l'heure cible — statut d'un
-  éventuel réveil resté programmé non vérifié. fait quand: une nuit réelle s'est exécutée, rapport
-  `PLANIFICATEUR/rapport_<date>.html` lisible au réveil, aucun `git push`, commits uniquement
-  locaux sur branches dédiées. réf: roadmap_planificateur_nuit.md (gate Phase 2), tests_manuels.md,
-  PLANIFICATEUR/queue.json
-- [P2|ouvert] Workflow de revue de code nocturne (nouvelle demande, esquissée puis interrompue par
-  /close) : overlay fenêtré (3/4 écran, centré, boutons Fermer/Annuler) demandant le dossier projet
-  à analyser, lancement d'une analyse de code, roadmap de revue générée et stockée dans
-  `<projet cible>/ROBERTO/`, priorisée par urgence et expliquée sans jargon technique (usage prévu :
-  discussion vocale via com_telephone en voiture), roadmap validée exécutée la nuit suivante par le
-  planificateur. Aucun fichier créé, spécification à reprendre depuis zéro. fait quand: le workflow
-  est spécifié en détail (déclenchement de l'overlay, format de la roadmap de revue, intégration au
-  planificateur) et validé par l'utilisateur avant tout code. réf: [à préciser]
-- [P3|ouvert] Piste creazik_v2 explicitement reportée par l'utilisateur ("à voir plus tard") :
-  proposition de découpler les gates de phase des tests manuels perceptuels (roadmap_impl.md) et
-  d'ajouter un outil de validation automatisée façon IA_Life (`tools/run_manual_checks.py` etc., via
-  Playwright sur l'app buildée). Rien acté, rien créé côté creazik_v2. fait quand: l'utilisateur
-  relance le sujet et valide (ou écarte) la proposition. réf: creazik_v2/roadmap_impl.md,
-  creazik_v2/tests_manuels.md, IA_Life/tools/ (pattern de référence)
+- [P1|ouvert] Première nuit réelle du planificateur : wakeup automatique programmé ce soir pour
+  21h00 (heure Windows), en attente de déclenchement au moment du close (dernière vérif 20h56) —
+  lancera seul `lancer_nuit.cmd` puis surveillera l'exécution. fait quand: une nuit réelle s'est
+  exécutée, rapport `PLANIFICATEUR/rapport_<date>.html` lisible au réveil, aucun `git push`,
+  commits uniquement locaux sur branches dédiées. réf: roadmap_planificateur_nuit.md (gate
+  Phase 2), tests_manuels.md, PLANIFICATEUR/queue.json
+- [P2|ouvert] Workflow de revue de code nocturne : spécifié dans `roadmap_revue_code_nocturne.md`
+  (4 phases — abandon de l'overlay/déclenchement custom, remplacé par `/code-review` niveau max
+  déclenché par une tâche planifiée que l'utilisateur configure lui-même ; sortie unique dans
+  `<cible>/ROBERTO/`, discussion vocale via com_telephone, correctifs exécutés la nuit suivante
+  par le planificateur). Reste à trancher avant tout code : interface de la commande de lancement
+  (chemin en dur vs nom de projet via `zones.md`) et vérification du confinement de `/code-review`
+  sans surveillance. fait quand: Phase 1 de `roadmap_revue_code_nocturne.md` implémentée et
+  testée. réf: roadmap_revue_code_nocturne.md (Phase 1, section « Points non résolus »)
+- [P3|ouvert] Piste creazik_v2 explicitement reportée par l'utilisateur ("à voir plus tard",
+  reconfirmé le 2026-09-04) : proposition de découpler les gates de phase des tests manuels
+  perceptuels (roadmap_impl.md) et d'ajouter un outil de validation automatisée façon IA_Life
+  (`tools/run_manual_checks.py` etc., via Playwright sur l'app buildée). Rien acté, rien créé côté
+  creazik_v2. fait quand: l'utilisateur relance le sujet et valide (ou écarte) la proposition.
+  réf: creazik_v2/roadmap_impl.md, creazik_v2/tests_manuels.md, IA_Life/tools/ (pattern de
+  référence)
 - [P2|ouvert] Vérifier en réel que `git checkout -b` et `git commit` passent la liste blanche
   `--allowedTools "Bash(git:*)"` (non testé : seuls `git push` refusé et `npm run typecheck`
   autorisé l'ont été). fait quand: la tâche `typecheck` du queue.json d'exemple aboutit sans
   statut `refus`, ou la liste blanche est corrigée. réf: PLANIFICATEUR/orchestrateur.py
   (BASH_AUTORISE_DEFAUT), PLANIFICATEUR/logs/
-- [P2|ouvert] Arbitrer les deux roadmaps avec une phase [EN COURS] simultanée :
+- [P2|ouvert] Arbitrer les roadmaps avec un statut `[EN COURS]` simultané :
   `roadmap_planificateur_nuit.md` (Phase 3) et `roadmap_ameliorations.md` (Phase 1, jamais
-  démarrée). fait quand: une seule des deux reste [EN COURS], l'autre est mise en pause explicite
-  ou close. réf: roadmap_planificateur_nuit.md, roadmap_ameliorations.md
+  démarrée). Un 3e chantier (`roadmap_revue_code_nocturne.md`) partage la même infrastructure
+  (`orchestrateur.py`, `queue.json`) mais n'a encore aucune phase `[EN COURS]`. fait quand: une
+  seule des deux reste `[EN COURS]`, l'autre est mise en pause explicite ou close. réf:
+  roadmap_planificateur_nuit.md, roadmap_ameliorations.md, roadmap_revue_code_nocturne.md
+  (Risques)
 - [P3|ouvert] Parsing de l'heure de reset de la limite 5 h. fait quand: le format réel a été
   observé dans un log de `PLANIFICATEUR/logs/` et le parsing est implémenté dans `classer_resultat`
   / `est_erreur_quota`. réf: roadmap_planificateur_nuit.md (Phase 3), PLANIFICATEUR/orchestrateur.py
@@ -73,36 +75,32 @@
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-09-04 (suite)
+# Session du 2026-09-04
 
 ## Décisions prises
-- Overlays plein écran ajoutés au planificateur : annonce au lancement (liste des tâches, butoir,
-  bouton OK), bilan à la fin (statuts, coût, durée, bouton Fermer), flag `--no-overlay` pour les
-  désactiver.
-- Test réel programmé ce soir à 21h abandonné en cours de route : l'utilisateur a enchaîné sur
-  d'autres sujets avant l'heure cible.
-- Piste creazik_v2 (découplage gates/tests manuels) explicitement reportée par l'utilisateur.
-- Nouvelle piste (workflow de revue de code nocturne) esquissée puis interrompue par /close, aucun
-  travail commencé.
+- Workflow de revue de code nocturne repensé : abandon de l'overlay/déclenchement custom,
+  remplacé par `/code-review` niveau max (jamais `ultra`, qui exige une confirmation interactive).
+- Déclenchement confié à l'utilisateur (planification Windows ou `/schedule`), pas de code de
+  trigger à écrire côté Roberto.
+- Reste du workflow conservé : sortie unique dans `<cible>/ROBERTO/`, discussion vocale via
+  com_telephone, correctifs exécutés la nuit suivante par le planificateur.
+- Piste creazik_v2 reconfirmée reportée par l'utilisateur.
+- Test réel du planificateur nocturne reprogrammé ce soir à 21h00 (wakeup automatique en attente).
 
 ## Livrables produits ou modifiés
-- `PLANIFICATEUR/overlay.py` : créé (overlays tkinter, charte VERTIA).
-- `PLANIFICATEUR/orchestrateur.py` : appel des overlays dans `main()`, `depart` passé explicitement
-  à `executer()`.
-- `roadmap_planificateur_nuit.md` : Phase 3, item overlay coché.
-- Tests : 36/36 verts, aucune régression.
+- `roadmap_revue_code_nocturne.md` : créé, puis réécrit (4 phases : Commande de lancement,
+  Génération roadmap, com_telephone, Exécution nocturne des correctifs).
 
 ## Hypothèses validées / invalidées
-- VALIDE : overlays plein écran lisibles et fonctionnels (confirmation visuelle explicite de
-  l'utilisateur : "overlays parfait").
-- EN ATTENTE : gate Phase 2 (nuit réelle) toujours non franchi ; workflow de revue de code nocturne
-  à spécifier de zéro.
+- EN ATTENTE : interface exacte de la commande de lancement de `/code-review` (Phase 1).
+- EN ATTENTE : confinement de `/code-review` niveau max lancé sans surveillance, non vérifié.
+- EN ATTENTE : wakeup 21h00 pour le test réel du planificateur nocturne — actif, pas encore
+  déclenché au moment du close (20h56).
 
 ## Prochaine étape exacte
-Clarifier si la nuit réelle du planificateur est encore visée, puis spécifier le workflow de revue
-de code nocturne (overlay sélection dossier, roadmap dans `<cible>/ROBERTO/`, triage par urgence
-sans jargon pour restitution vocale com_telephone).
+Trancher l'interface de la commande de lancement (Phase 1 de `roadmap_revue_code_nocturne.md`).
+Le wakeup 21h00 est actif dans cette session et lancera seul `lancer_nuit.cmd` puis surveillera
+l'exécution.
 
 ## Question bloquante pour la session suivante
-Le workflow de revue de code nocturne doit-il être repris en priorité, ou la nuit réelle du
-planificateur reste-t-elle l'objectif immédiat ?
+Aucune.

@@ -11,15 +11,13 @@ Roberto héberge le **bridge com_tel** (serveur Node 5000 + STT 5001 + TTS 5002 
 `com_manager.py`, `.env` hors git) et en est le template de référence ; `ia_life`, `tsa`,
 `roberto`, `creazik_v2` tous raccordés. Audit `_docs/audit_securite_2026-08-28.md` : S1-S3+S6
 corrigés, S4/S5/S7/S8 ouverts. Chantier **planificateur nocturne** (`PLANIFICATEUR/`) : Phases 1-2
-[FAIT], Phase 3 [EN COURS] — overlays plein écran d'annonce/bilan ajoutés et validés visuellement ;
-gate Phase 2 (nuit réelle) toujours non franchi. Nouvelle piste évoquée, non spécifiée : workflow
-de revue de code nocturne (overlay sélection dossier, roadmap de revue dans `<cible>/ROBERTO/`,
-triage par urgence restitué par com_telephone).
+[FAIT], Phase 3 [EN COURS] ; gate Phase 2 (nuit réelle) test reprogrammé ce soir 21h00 via wakeup
+automatique. Nouveau chantier **revue de code nocturne** (`roadmap_revue_code_nocturne.md`, 4
+phases [TODO]) : `/code-review` niveau max déclenché par une tâche planifiée par l'utilisateur
+(pas d'overlay), sortie dans `<cible>/ROBERTO/`, discussion vocale via com_telephone, correctifs
+exécutés la nuit suivante.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-21 : Convention de déploiement : tout ce qui vient de ServOMorph s'installe dans un
-  dossier ROBERTO à la racine du projet cible. Si le projet a déjà du contenu ServOMorph,
-  l'analyser avant, ne jamais le vider.
 - 2026-08-25 : com_telephone remplacé intégralement par la version validée en réel dans creazik_v2
   (nouvelle source de vérité pour les futurs déploiements).
 - 2026-08-25 : com_manager.py affiche le lien appli (token) au démarrage et démarre tout par défaut
@@ -44,3 +42,8 @@ triage par urgence restitué par com_telephone).
 - 2026-09-04 : Overlays plein écran ajoutés au planificateur (`overlay.py`) : annonce au
   lancement, bilan à la fin, désactivables via `--no-overlay`. Validés visuellement par
   l'utilisateur.
+- 2026-09-04 : Workflow de revue de code nocturne repensé : abandon de l'overlay et du
+  déclenchement custom, remplacé par `/code-review` niveau max déclenché par une tâche planifiée
+  par l'utilisateur (Windows ou `/schedule`). Reste : sortie unique dans `<cible>/ROBERTO/`,
+  discussion vocale via com_telephone, correctifs exécutés la nuit suivante
+  (`roadmap_revue_code_nocturne.md`).

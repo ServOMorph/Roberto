@@ -28,7 +28,13 @@ Chantier en cours : **planificateur nocturne** (`PLANIFICATEUR/`, `roadmap_plani
 lance des `claude -p --restricted` la nuit, confinés par `allowlist.txt`, butoir 06:00, retry sur
 la limite 5 h, rapport HTML + push com_tel, overlays plein écran d'annonce et de bilan (validés
 visuellement). Phases 1-2 [FAIT] (36 tests + validations réelles), Phase 3 [EN COURS]. Première
-nuit réelle non encore faite.
+nuit réelle reprogrammée pour ce soir 21h00 (wakeup automatique).
+
+Nouveau chantier spécifié : **revue de code nocturne** (`roadmap_revue_code_nocturne.md`, 4
+phases [TODO]) — `/code-review` niveau max déclenché par une tâche planifiée par l'utilisateur
+(pas d'overlay), sortie unique dans `<projet cible>/ROBERTO/` en langage simple priorisé par
+urgence, discussion vocale via com_telephone, correctifs exécutés la nuit suivante par le
+planificateur.
 
 En attente (validation réelle) : notifications téléphone verrouillé, raccordement creazik_v2,
 mise en veille depuis la PWA, première nuit du planificateur.

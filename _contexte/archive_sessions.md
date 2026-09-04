@@ -4,6 +4,42 @@ Sessions déplacées ici par `/close` (la plus récente reste dans `signals.md`)
 
 ---
 
+# Session du 2026-09-04 (suite)
+
+## Décisions prises
+- Overlays plein écran ajoutés au planificateur : annonce au lancement (liste des tâches, butoir,
+  bouton OK), bilan à la fin (statuts, coût, durée, bouton Fermer), flag `--no-overlay` pour les
+  désactiver.
+- Test réel programmé ce soir à 21h abandonné en cours de route : l'utilisateur a enchaîné sur
+  d'autres sujets avant l'heure cible.
+- Piste creazik_v2 (découplage gates/tests manuels) explicitement reportée par l'utilisateur.
+- Nouvelle piste (workflow de revue de code nocturne) esquissée puis interrompue par /close, aucun
+  travail commencé.
+
+## Livrables produits ou modifiés
+- `PLANIFICATEUR/overlay.py` : créé (overlays tkinter, charte VERTIA).
+- `PLANIFICATEUR/orchestrateur.py` : appel des overlays dans `main()`, `depart` passé explicitement
+  à `executer()`.
+- `roadmap_planificateur_nuit.md` : Phase 3, item overlay coché.
+- Tests : 36/36 verts, aucune régression.
+
+## Hypothèses validées / invalidées
+- VALIDE : overlays plein écran lisibles et fonctionnels (confirmation visuelle explicite de
+  l'utilisateur : "overlays parfait").
+- EN ATTENTE : gate Phase 2 (nuit réelle) toujours non franchi ; workflow de revue de code nocturne
+  à spécifier de zéro.
+
+## Prochaine étape exacte
+Clarifier si la nuit réelle du planificateur est encore visée, puis spécifier le workflow de revue
+de code nocturne (overlay sélection dossier, roadmap dans `<cible>/ROBERTO/`, triage par urgence
+sans jargon pour restitution vocale com_telephone).
+
+## Question bloquante pour la session suivante
+Le workflow de revue de code nocturne doit-il être repris en priorité, ou la nuit réelle du
+planificateur reste-t-elle l'objectif immédiat ?
+
+---
+
 # Session du 2026-08-28
 
 ## Décisions prises

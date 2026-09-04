@@ -1,3 +1,11 @@
+## v0.8 — 2026-09-04
+
+### Ajouté
+- `roadmap_revue_code_nocturne.md` : spécification du workflow de revue de code nocturne (4
+  phases) — `/code-review` niveau max déclenché par une tâche planifiée par l'utilisateur (pas
+  d'overlay), sortie unique dans `<cible>/ROBERTO/` en langage simple priorisé par urgence,
+  discussion vocale via com_telephone, correctifs exécutés la nuit suivante par le planificateur.
+
 ## v0.7 — 2026-09-04
 
 ### Ajouté
