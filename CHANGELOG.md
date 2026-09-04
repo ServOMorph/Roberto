@@ -1,3 +1,18 @@
+## v0.6 — 2026-09-04
+
+### Ajouté
+- `PLANIFICATEUR/` : orchestrateur de tâches Claude Code nocturnes. `orchestrateur.py` (boucle
+  séquentielle, retry sur limite 5 h, butoir 06:00, reprise après crash sans rejeu, timeout
+  wall-clock + kill de l'arbre de processus), `rapport.py` (HTML charte VERTIA, un run avec
+  outils refusés classé `refus` et non `faite`), `tache.py` (CLI add/list/rm/reset avec
+  validation d'allowlist immédiate), `notifier.py` (push du résumé sur com_telephone),
+  `allowlist.txt`, `queue.json`, `lancer_nuit.cmd`, `test_planificateur.py` (36 tests).
+- `roadmap_planificateur_nuit.md` : Phases 1-2 [FAIT], Phase 3 [EN COURS].
+
+### Modifié
+- `tests_manuels.md` : ajout de la création de la tâche planifiée Windows et de la première nuit
+  réelle du planificateur (gate Phase 2).
+
 ## v0.5 — 2026-08-29
 
 ### Ajouté

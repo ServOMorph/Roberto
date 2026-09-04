@@ -7,22 +7,17 @@ Copie réorganisée de claude-vibecoding-kit, réalisée étape par étape.
 Markdown, Python (ollama_call.py), templates de commandes Claude Code
 
 ## État actuel (réécrit intégralement à chaque /close)
-Roberto héberge le **bridge com_tel** et en est le **template de référence**. Serveur
-(Node 5000 + STT 5001 + TTS 5002) lancé via `com_telephone/_commands/com_manager.py` ; `.env`
-(AUTH_TOKEN, TUNNEL_URL, VAPID) hors git. `projects.json` (non versionné) : `ia_life`, `tsa`,
-`roberto`, `creazik_v2` — **tous raccordés**, plus aucune copie autonome active (creazik_v2
-raccordé le 2026-08-28). PWA : écran d'accueil (liste projets + pastille non-lus persistée +
-bouton "Mettre le PC en veille" avec confirmation -> WS `client.sleep`), pastille non-lus aussi
-sur le bouton "Projets" du bandeau en vue chat, partage image + JSON (`_docs/fichiers/`),
-notifications fiabilisées (détection premier-plan `client.visible`, anti-doublon `mid`, un
-abonnement par `deviceId`). Sécurité : audit `_docs/audit_securite_2026-08-28.md` — S1-S3+S6
-corrigés, S4 (TTS cloud) / S5 / S7 (token) / S8 ouverts. Analyse accès externe (Marie -> tsa) :
-`_docs/analyse_acces_externe_marie_tsa.md`, en attente de décision. Glossaire
-`_docs/vocabulaire.md`. Commande `/com_telephone_init <cible> <mode>`. Roadmap
-`roadmap_com_telephone_hub.md` : phases 1 à 5 FAIT.
+Roberto héberge le **bridge com_tel** (serveur Node 5000 + STT 5001 + TTS 5002 via
+`com_manager.py`, `.env` hors git) et en est le template de référence ; `ia_life`, `tsa`,
+`roberto`, `creazik_v2` tous raccordés. PWA : accueil (pastille non-lus persistée, bouton veille
+PC), pastille non-lus sur bouton "Projets" en vue chat, partage image + JSON, notifications
+fiabilisées. Audit `_docs/audit_securite_2026-08-28.md` : S1-S3+S6 corrigés, S4/S5/S7/S8 ouverts.
+Nouveau chantier : **planificateur nocturne** (`PLANIFICATEUR/`, roadmap dédiée) — orchestrateur
+Python qui lance des `claude -p --restricted` la nuit, confinés par `allowlist.txt`, butoir 06:00,
+retry aveugle sur limite 5 h, rapport HTML (charte VERTIA) + push com_tel. Phases 1-2 [FAIT]
+(36 tests + validations réelles), Phase 3 [EN COURS] ; gate Phase 2 (nuit réelle) non franchi.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-20 : Initialisation du protocole vibecoding.
 - 2026-08-21 : AUTH_TOKEN de com_telephone stocké dans server/.env (hors git), chargé par
   com_manager.py avant le lancement de node — pas de secret en dur dans le code.
 - 2026-08-21 : Convention de déploiement : tout ce qui vient de ServOMorph s'installe dans un
@@ -44,3 +39,8 @@ corrigés, S4 (TTS cloud) / S5 / S7 (token) / S8 ouverts. Analyse accès externe
 - 2026-08-28 : Audit sécurité (`_docs/audit_securite_2026-08-28.md`). Corrigés : `/send` et
   `/push/test` refusent les requêtes proxifiées (S1), nettoyage `\r\n\t` des textes journalisés
   (S2), extension image assainie + limites de taille + maxPayload WS (S3/S6).
+- 2026-09-04 : Planificateur nocturne (`PLANIFICATEUR/`) : exécute des tâches `claude -p`
+  `--restricted` la nuit, confinées par une allowlist de dossiers, butoir 06:00, retry aveugle
+  sur la limite 5 h, rapport HTML (charte VERTIA) + push com_tel. Le confinement repose sur le
+  harness (`--restricted` + `--allowedTools` + `--disallowedTools`), jamais sur `CLAUDE.md`.
+  Un run avec outils refusés est un échec ; une tâche interrompue n'est pas rejouée.

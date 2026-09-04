@@ -1,0 +1,4 @@
+# Dossiers autorises pour les taches nocturnes, un par ligne.
+# Lignes vides et lignes commencant par # ignorees.
+# Un dossier de tache doit etre egal a l'une de ces entrees ou situe dessous.
+D:\ServOMorph\creazik_v2

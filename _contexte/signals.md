@@ -1,6 +1,24 @@
-# Signals — roberto   (MAJ 2026-08-29)
+# Signals — roberto   (MAJ 2026-09-04)
 
 ## Actions ouvertes
+- [P1|ouvert] Première nuit réelle du planificateur : créer la tâche planifiée Windows (heure de
+  coucher à fournir), lancer `claude setup-token`, laisser tourner une nuit sur creazik_v2 avec
+  le `queue.json` d'exemple. fait quand: une nuit réelle s'est exécutée, rapport
+  `PLANIFICATEUR/rapport_<date>.html` lisible au réveil, aucun `git push`, commits uniquement
+  locaux sur branches dédiées. réf: roadmap_planificateur_nuit.md (gate Phase 2), tests_manuels.md,
+  PLANIFICATEUR/queue.json
+- [P2|ouvert] Vérifier en réel que `git checkout -b` et `git commit` passent la liste blanche
+  `--allowedTools "Bash(git:*)"` (non testé : seuls `git push` refusé et `npm run typecheck`
+  autorisé l'ont été). fait quand: la tâche `typecheck` du queue.json d'exemple aboutit sans
+  statut `refus`, ou la liste blanche est corrigée. réf: PLANIFICATEUR/orchestrateur.py
+  (BASH_AUTORISE_DEFAUT), PLANIFICATEUR/logs/
+- [P2|ouvert] Arbitrer les deux roadmaps avec une phase [EN COURS] simultanée :
+  `roadmap_planificateur_nuit.md` (Phase 3) et `roadmap_ameliorations.md` (Phase 1, jamais
+  démarrée). fait quand: une seule des deux reste [EN COURS], l'autre est mise en pause explicite
+  ou close. réf: roadmap_planificateur_nuit.md, roadmap_ameliorations.md
+- [P3|ouvert] Parsing de l'heure de reset de la limite 5 h. fait quand: le format réel a été
+  observé dans un log de `PLANIFICATEUR/logs/` et le parsing est implémenté dans `classer_resultat`
+  / `est_erreur_quota`. réf: roadmap_planificateur_nuit.md (Phase 3), PLANIFICATEUR/orchestrateur.py
 - [P2|ouvert] `MACROS/` et `UI_WEB/` déplacés ici depuis `templates/roberto/` du kit
   (claude-vibecoding-kit) le 2026-08-29, à la demande de l'utilisateur (nettoyage du kit —
   ce template n'avait plus d'équivalent nulle part, sa source `D:\ServOMorph\Roberto2` a été
@@ -39,21 +57,34 @@
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-08-29 (suite)
+# Session du 2026-09-04
 
 ## Décisions prises
-- Aucune. Accès externe Marie : 4 questions identifiées, décision en attente de réponses.
+- Planificateur nocturne : code dans `Roberto/PLANIFICATEUR/`, confinement natif `--restricted`
+  (pas de hook maison en MVP).
+- Un run dont des outils ont été refusés = statut `refus` (échec), jamais compté comme succès.
+- Tâche interrompue par un crash = `echouee/interrompue`, aucun rejeu automatique.
+- Tâche planifiée Windows non créée cette session (heure de coucher non fixée, modif système).
+- Phase 3 poursuivie sans `/compact` ni gate Phase 2 franchi (écart de procédure assumé).
 
 ## Livrables produits ou modifiés
-- Analyse `com_telephone/_docs/analyse_acces_externe_marie_tsa.md` relue ; 4 questions
-  clarifiées pour décision (type accès, commandes !, durée, données sensibles).
+- `PLANIFICATEUR/` créé : orchestrateur.py, rapport.py, tache.py (CLI), notifier.py, allowlist.txt,
+  queue.json, lancer_nuit.cmd, .gitignore, test_planificateur.py (36 tests verts).
+- `tests_manuels.md` : + tâche planifiée Windows, + nuit réelle (gate Phase 2).
+- `roadmap_planificateur_nuit.md` : Phases 1 et 2 [FAIT], Phase 3 [EN COURS] (5 items sur 6).
 
 ## Hypothèses validées / invalidées
-- EN ATTENTE : voie accès externe Marie (multi-utilisateurs vs second serveur).
+- VALIDE : confinement `--restricted` (écriture hors périmètre refusée ; `git push` refusé malgré
+  `Bash(git:*)` ; `npm run typecheck` autorisé) ; timeout + kill de l'arbre `node` ; push
+  com_telephone (HTTP 200 réel) ; `--max-budget-usd` sous abonnement.
+- INVALIDE : `sauver_queue`/`charger_queue`/`charger_allowlist` figeaient le chemin par défaut à
+  l'import -> corrigé en liaison tardive (bug trouvé par le smoke test).
+- EN ATTENTE : format de l'erreur de quota (non provocable) ; `git checkout -b` / `git commit`
+  passent-ils la liste blanche ; gate Phase 2 = une nuit réelle.
 
 ## Prochaine étape exacte
-L'utilisateur répond aux 4 questions. Ensuite : trancher voie A ou B et passer à
-l'implémentation.
+Fournir l'heure de coucher, créer la tâche planifiée Windows, lancer `claude setup-token`, puis
+première nuit réelle sur creazik_v2 avec le `queue.json` d'exemple.
 
 ## Question bloquante pour la session suivante
-Les réponses aux 4 questions de clarification sur l'accès externe de Marie.
+Heure de coucher pour la tâche planifiée Windows.

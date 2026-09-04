@@ -1,0 +1,29 @@
+{
+  "butoir": "06:00",
+  "taches": [
+    {
+      "id": "audit-deps",
+      "dossier": "D:\\ServOMorph\\creazik_v2",
+      "prompt": "Lis package.json et la structure du projet. Ecris dans NOTES_AUDIT_DEPS.md un inventaire des dependances de production et de developpement, en signalant celles qui ne sont referencees nulle part dans le code source. Ne modifie aucun autre fichier. Ne lance aucune commande.",
+      "modele": "sonnet",
+      "budget_usd": 0.6,
+      "timeout_min": 15,
+      "outils": ["Read", "Glob", "Grep", "Write"],
+      "statut": "en_attente",
+      "tentatives": 0,
+      "historique": []
+    },
+    {
+      "id": "typecheck",
+      "dossier": "D:\\ServOMorph\\creazik_v2",
+      "prompt": "Cree une branche git nuit/typecheck depuis main. Lance npm run typecheck. Si des erreurs de typage apparaissent, corrige uniquement celles qui sont triviales et sans ambiguite, relance npm run typecheck puis npm test, et commit en local. Ne pousse jamais. Si une erreur demande un arbitrage, ne la corrige pas et explique-la dans ta reponse finale.",
+      "modele": "sonnet",
+      "budget_usd": 1.5,
+      "heure_min": "01:00",
+      "timeout_min": 30,
+      "statut": "en_attente",
+      "tentatives": 0,
+      "historique": []
+    }
+  ]
+}
