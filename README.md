@@ -27,14 +27,16 @@ anti-doublon `mid`, un abonnement par `deviceId`). Docs `com_telephone/_docs/` :
 Chantier en cours : **planificateur nocturne** (`PLANIFICATEUR/`, `roadmap_planificateur_nuit.md`) —
 lance des `claude -p --restricted` la nuit, confinés par `allowlist.txt`, butoir 06:00, retry sur
 la limite 5 h, rapport HTML + push com_tel, overlays plein écran d'annonce et de bilan (validés
-visuellement). Phases 1-2 [FAIT] (36 tests + validations réelles), Phase 3 [EN COURS]. Première
-nuit réelle reprogrammée pour ce soir 21h00 (wakeup automatique).
+visuellement). Phases 1-2 [FAIT] (36 tests + validations réelles), Phase 3 [EN COURS]. Nuit réelle
+du 2026-09-04 21h00 déclenchée mais gate Phase 2 non franchi (une tâche en `refus`, `Write` refusé
+malgré `--tools`, cause non investiguée).
 
-Nouveau chantier spécifié : **revue de code nocturne** (`roadmap_revue_code_nocturne.md`, 4
-phases [TODO]) — `/code-review` niveau max déclenché par une tâche planifiée par l'utilisateur
-(pas d'overlay), sortie unique dans `<projet cible>/ROBERTO/` en langage simple priorisé par
-urgence, discussion vocale via com_telephone, correctifs exécutés la nuit suivante par le
-planificateur.
+Chantier en cours : **revue de code nocturne** (`roadmap_revue_code_nocturne.md`) — `/code-review`
+niveau max déclenché par une tâche planifiée par l'utilisateur (pas d'overlay), sortie unique dans
+`<projet cible>/ROBERTO/` en langage simple priorisé par urgence, discussion vocale via
+com_telephone, correctifs exécutés la nuit suivante par le planificateur. Phase 1 [EN COURS] :
+`PLANIFICATEUR/revue_code.py` écrit et testé (18 tests + confinement vérifié en réel), invocation
+via tâche planifiée Windows non testée.
 
 En attente (validation réelle) : notifications téléphone verrouillé, raccordement creazik_v2,
 mise en veille depuis la PWA, première nuit du planificateur.

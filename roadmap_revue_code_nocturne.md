@@ -25,25 +25,31 @@ en réutilisant l'infrastructure existante).
 | Format de la sortie | Langage simple, sans jargon technique, priorisé par urgence (P1/P2/P3) — pensé pour discussion vocale en voiture |
 | Discussion | Vocale via com_telephone : lecture/discussion du fichier, validation ou invalidation par l'utilisateur |
 | Exécution des correctifs | Nuit suivante : les points validés deviennent des tâches `queue.json` classiques, exécutées par l'orchestrateur du planificateur existant |
+| Interface de lancement | Alias `.claude/zones.md` (racine Roberto, à enrichir au besoin) ou chemin absolu direct |
+| Confinement | `claude -p "/code-review <niveau>" --restricted` (lecture seule + `Bash(git:*)`, jamais Write/Edit) ; la sortie brute est écrite par le script Python lui-même dans `<cible>/ROBERTO/`, jamais par le process `claude` |
+| Coût sans surveillance | `--max-budget-usd` (défaut 5 $) — protège la fenêtre 5h partagée avec les autres tâches nocturnes, pas la facturation (utilisateur sous abonnement) |
 
 ### Points non résolus, assumés provisoirement
 
-- Interface exacte de la commande de lancement (paramètres : dossier cible, éventuellement projet
-  nommé via `zones.md`) : à trancher en Phase 1.
-- Confinement de `/code-review` niveau max quand lancé sans surveillance (comportement par défaut
-  vs `--restricted` façon planificateur) : à vérifier en Phase 1.
 - Format précis de conversion « constat `/code-review` -> tâche `queue.json` » (Phase 2 -> Phase 4) :
   à définir en Phase 2.
 
 ---
 
-## Phase 1 — Commande de lancement de l'analyse [TODO]
+## Phase 1 — Commande de lancement de l'analyse [EN COURS]
 
-- [ ] Script/commande unique : prend le dossier cible en paramètre, lance `/code-review` niveau
-      max dessus, capture la sortie brute
-- [ ] Invocable manuellement et par tâche planifiée Windows (ou `/schedule`) sans surveillance
-- [ ] Confinement vérifié (pas d'écriture hors du dossier cible et de `<cible>/ROBERTO/`)
-- [ ] Tests
+- [x] Script/commande unique (`PLANIFICATEUR/revue_code.py`) : résout la cible (alias
+      `.claude/zones.md` ou chemin direct), lance `/code-review <niveau>` dessus, capture la
+      sortie brute dans `<cible>/ROBERTO/`
+- [ ] Invocable manuellement (fait, testé en réel) et par tâche planifiée Windows — `schtasks`
+      non testé cette session
+- [x] Confinement vérifié en réel sur Roberto : `git status` avant/après identique hors
+      `<cible>/ROBERTO/`, aucune écriture du process `claude` lui-même (Read/Glob/Grep/
+      `Bash(git:*)` uniquement, jamais Write/Edit)
+- [x] Tests : 18 tests unitaires (`test_revue_code.py`), mockés — résolution de zones, construction
+      de commande, écriture confinée. 3 défauts trouvés par le run réel dans `revue_code.py`
+      lui-même (`--max-budget-usd` absent, `_tuer_arbre` non cross-platform, bug `charger_zones`
+      sur la sous-chaîne "Alias"), corrigés et couverts par régression.
 
 **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
 Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmation.
@@ -90,5 +96,6 @@ Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmati
 - Fichier de sortie unique servant à la fois de spec technique (Phase 4) et de support vocal
   (Phase 3) : risque de compromis si les deux usages tirent le format dans des directions
   différentes.
-- `/code-review` niveau max lancé sans surveillance : comportement de confinement (accès fichiers,
-  outils) non vérifié — à valider en Phase 1 avant tout déploiement planifié.
+- `/code-review` niveau max lancé sans surveillance : confinement vérifié en réel sur Roberto
+  (Phase 1, 2026-09-04). Reste à vérifier sur un déclenchement via tâche planifiée Windows réelle
+  (`schtasks`), pas seulement en invocation manuelle.

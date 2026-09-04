@@ -10,16 +10,16 @@ Markdown, Python (ollama_call.py), templates de commandes Claude Code
 Roberto héberge le **bridge com_tel** (serveur Node 5000 + STT 5001 + TTS 5002 via
 `com_manager.py`, `.env` hors git) et en est le template de référence ; `ia_life`, `tsa`,
 `roberto`, `creazik_v2` tous raccordés. Audit `_docs/audit_securite_2026-08-28.md` : S1-S3+S6
-corrigés, S4/S5/S7/S8 ouverts. Chantier **planificateur nocturne** (`PLANIFICATEUR/`) : Phases 1-2
-[FAIT], Phase 3 [EN COURS] ; gate Phase 2 (nuit réelle) test reprogrammé ce soir 21h00 via wakeup
-automatique. Nouveau chantier **revue de code nocturne** (`roadmap_revue_code_nocturne.md`, 4
-phases [TODO]) : `/code-review` niveau max déclenché par une tâche planifiée par l'utilisateur
-(pas d'overlay), sortie dans `<cible>/ROBERTO/`, discussion vocale via com_telephone, correctifs
-exécutés la nuit suivante.
+corrigés, S4/S5/S7/S8 ouverts. Chantier **planificateur nocturne** (`PLANIFICATEUR/`) : Phase 3
+[EN COURS] ; nuit réelle du 2026-09-04 21h00 déclenchée mais gate Phase 2 non franchi (tâche
+`audit-deps` en statut `refus` — `Write` refusé malgré `--tools`, cause non investiguée ; tâche
+`typecheck` restée `en_attente`). Chantier **revue de code nocturne**
+(`roadmap_revue_code_nocturne.md`) : Phase 1 [EN COURS] — `PLANIFICATEUR/revue_code.py` écrit et
+testé (18 tests + confinement vérifié en réel sur Roberto, coût réel 2,15 $/run niveau max),
+invocation via tâche planifiée Windows non testée. Trois roadmaps ont désormais une phase
+[EN COURS] simultanée (arbitrage non tranché, cf. `signals.md`).
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-25 : com_telephone remplacé intégralement par la version validée en réel dans creazik_v2
-  (nouvelle source de vérité pour les futurs déploiements).
 - 2026-08-25 : com_manager.py affiche le lien appli (token) au démarrage et démarre tout par défaut
   sans argument — nécessite TUNNEL_URL dans .env en plus d'AUTH_TOKEN.
 - 2026-08-28 : com_telephone rendu multi-projets (routage par `project`, `projects.json`, sélecteur
@@ -47,3 +47,9 @@ exécutés la nuit suivante.
   par l'utilisateur (Windows ou `/schedule`). Reste : sortie unique dans `<cible>/ROBERTO/`,
   discussion vocale via com_telephone, correctifs exécutés la nuit suivante
   (`roadmap_revue_code_nocturne.md`).
+- 2026-09-04 : Phase 1 de `roadmap_revue_code_nocturne.md` : `revue_code.py` lance
+  `claude -p "/code-review <niveau>" --restricted` (lecture seule + `Bash(git:*)`, jamais
+  Write/Edit) et écrit lui-même la sortie brute dans `<cible>/ROBERTO/` (jamais le process
+  `claude`). `--max-budget-usd` (défaut 5 $) conservé malgré l'abonnement de l'utilisateur :
+  protège la fenêtre 5h partagée avec les autres tâches nocturnes, pas la facturation — désaccord
+  non tranché.

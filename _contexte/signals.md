@@ -1,20 +1,26 @@
 # Signals — roberto   (MAJ 2026-09-04)
 
 ## Actions ouvertes
-- [P1|ouvert] Première nuit réelle du planificateur : wakeup automatique programmé ce soir pour
-  21h00 (heure Windows), en attente de déclenchement au moment du close (dernière vérif 20h56) —
-  lancera seul `lancer_nuit.cmd` puis surveillera l'exécution. fait quand: une nuit réelle s'est
-  exécutée, rapport `PLANIFICATEUR/rapport_<date>.html` lisible au réveil, aucun `git push`,
-  commits uniquement locaux sur branches dédiées. réf: roadmap_planificateur_nuit.md (gate
-  Phase 2), tests_manuels.md, PLANIFICATEUR/queue.json
-- [P2|ouvert] Workflow de revue de code nocturne : spécifié dans `roadmap_revue_code_nocturne.md`
-  (4 phases — abandon de l'overlay/déclenchement custom, remplacé par `/code-review` niveau max
-  déclenché par une tâche planifiée que l'utilisateur configure lui-même ; sortie unique dans
-  `<cible>/ROBERTO/`, discussion vocale via com_telephone, correctifs exécutés la nuit suivante
-  par le planificateur). Reste à trancher avant tout code : interface de la commande de lancement
-  (chemin en dur vs nom de projet via `zones.md`) et vérification du confinement de `/code-review`
-  sans surveillance. fait quand: Phase 1 de `roadmap_revue_code_nocturne.md` implémentée et
-  testée. réf: roadmap_revue_code_nocturne.md (Phase 1, section « Points non résolus »)
+- [P1|ouvert] Nuit réelle du planificateur (déclenchée le 2026-09-04 à 21h00) : tâche `audit-deps`
+  terminée en statut `refus` — l'outil `Write`, pourtant listé dans `outils` de la tâche et couvert
+  par `--tools`, a été refusé au runtime (cause non investiguée cette session). Tâche `typecheck`
+  (heure_min 01:00) restée `en_attente` dans `queue.json` ; état du process orchestrateur au-delà
+  de 21h04 non vérifié. fait quand: cause du refus Write identifiée et corrigée (ou contournée),
+  une nuit complète sans refus imprévu, rapport `rapport_<date>.html` lisible. réf:
+  PLANIFICATEUR/queue.json (tâche audit-deps, historique), roadmap_planificateur_nuit.md
+  (gate Phase 2)
+- [P2|ouvert] Workflow de revue de code nocturne (`roadmap_revue_code_nocturne.md`) : Phase 1
+  avancée — `PLANIFICATEUR/revue_code.py` créé (résolution cible via alias `.claude/zones.md` ou
+  chemin direct, lance `claude -p "/code-review <niveau>" --restricted` en lecture seule +
+  `Bash(git:*)`, jamais Write/Edit, écrit lui-même la sortie brute dans `<cible>/ROBERTO/`).
+  18 tests unitaires + confinement vérifié en réel sur Roberto (aucune écriture hors
+  `<cible>/ROBERTO/`, coût réel 2,15 $ pour un run niveau max, ~13 min). `--max-budget-usd`
+  (défaut 5 $) conservé malgré l'objection de l'utilisateur (abonnement) : justifié par la
+  fenêtre 5h partagée avec les autres tâches nocturnes, pas par la facturation — désaccord non
+  tranché. Reste : invocation via tâche planifiée Windows (schtasks) non testée. fait quand:
+  schtasks testé et Phase 2 (génération de la roadmap de review) démarrée. réf:
+  roadmap_revue_code_nocturne.md (Phase 1), PLANIFICATEUR/revue_code.py,
+  PLANIFICATEUR/test_revue_code.py
 - [P3|ouvert] Piste creazik_v2 explicitement reportée par l'utilisateur ("à voir plus tard",
   reconfirmé le 2026-09-04) : proposition de découpler les gates de phase des tests manuels
   perceptuels (roadmap_impl.md) et d'ajouter un outil de validation automatisée façon IA_Life
@@ -27,13 +33,13 @@
   autorisé l'ont été). fait quand: la tâche `typecheck` du queue.json d'exemple aboutit sans
   statut `refus`, ou la liste blanche est corrigée. réf: PLANIFICATEUR/orchestrateur.py
   (BASH_AUTORISE_DEFAUT), PLANIFICATEUR/logs/
-- [P2|ouvert] Arbitrer les roadmaps avec un statut `[EN COURS]` simultané :
-  `roadmap_planificateur_nuit.md` (Phase 3) et `roadmap_ameliorations.md` (Phase 1, jamais
-  démarrée). Un 3e chantier (`roadmap_revue_code_nocturne.md`) partage la même infrastructure
-  (`orchestrateur.py`, `queue.json`) mais n'a encore aucune phase `[EN COURS]`. fait quand: une
-  seule des deux reste `[EN COURS]`, l'autre est mise en pause explicite ou close. réf:
-  roadmap_planificateur_nuit.md, roadmap_ameliorations.md, roadmap_revue_code_nocturne.md
-  (Risques)
+- [P1|ouvert] Arbitrer les 3 roadmaps désormais `[EN COURS]` simultanément :
+  `roadmap_planificateur_nuit.md` (Phase 3), `roadmap_ameliorations.md` (Phase 1, jamais démarrée),
+  `roadmap_revue_code_nocturne.md` (Phase 1, script écrit et testé cette session). Les deux
+  premières partagent `orchestrateur.py`/`queue.json` ; les trois se disputent la même fenêtre 5h.
+  fait quand: une seule roadmap reste activement travaillée à la fois, les autres explicitement en
+  pause ou closes. réf: roadmap_planificateur_nuit.md, roadmap_ameliorations.md,
+  roadmap_revue_code_nocturne.md
 - [P3|ouvert] Parsing de l'heure de reset de la limite 5 h. fait quand: le format réel a été
   observé dans un log de `PLANIFICATEUR/logs/` et le parsing est implémenté dans `classer_resultat`
   / `est_erreur_quota`. réf: roadmap_planificateur_nuit.md (Phase 3), PLANIFICATEUR/orchestrateur.py
@@ -78,29 +84,31 @@
 # Session du 2026-09-04
 
 ## Décisions prises
-- Workflow de revue de code nocturne repensé : abandon de l'overlay/déclenchement custom,
-  remplacé par `/code-review` niveau max (jamais `ultra`, qui exige une confirmation interactive).
-- Déclenchement confié à l'utilisateur (planification Windows ou `/schedule`), pas de code de
-  trigger à écrire côté Roberto.
-- Reste du workflow conservé : sortie unique dans `<cible>/ROBERTO/`, discussion vocale via
-  com_telephone, correctifs exécutés la nuit suivante par le planificateur.
-- Piste creazik_v2 reconfirmée reportée par l'utilisateur.
-- Test réel du planificateur nocturne reprogrammé ce soir à 21h00 (wakeup automatique en attente).
+- Phase 1 de `roadmap_revue_code_nocturne.md` tranchée : interface via alias `.claude/zones.md`
+  (ou chemin direct), confinement `claude -p --restricted` (lecture seule + `Bash(git:*)`, jamais
+  Write/Edit).
+- Sortie brute écrite par le script Python lui-même dans `<cible>/ROBERTO/`, jamais par le process
+  `claude` — renforce le confinement au-delà de ce que `--restricted` garantit seul.
+- `--max-budget-usd` conservé dans `revue_code.py` malgré l'objection de l'utilisateur
+  (abonnement) : protège la fenêtre de tokens partagée avec les autres tâches nocturnes, pas un
+  enjeu de facturation — désaccord non tranché.
 
 ## Livrables produits ou modifiés
-- `roadmap_revue_code_nocturne.md` : créé, puis réécrit (4 phases : Commande de lancement,
-  Génération roadmap, com_telephone, Exécution nocturne des correctifs).
+- `PLANIFICATEUR/revue_code.py` : créé (Phase 1 de `roadmap_revue_code_nocturne.md`).
+- `PLANIFICATEUR/test_revue_code.py` : créé, 18 tests, mockés (aucun appel réel à `claude`).
 
 ## Hypothèses validées / invalidées
-- EN ATTENTE : interface exacte de la commande de lancement de `/code-review` (Phase 1).
-- EN ATTENTE : confinement de `/code-review` niveau max lancé sans surveillance, non vérifié.
-- EN ATTENTE : wakeup 21h00 pour le test réel du planificateur nocturne — actif, pas encore
-  déclenché au moment du close (20h56).
+- VALIDE : confinement de `/code-review max` sans surveillance — vérifié en réel sur Roberto
+  (`git status` avant/après identique hors `ROBERTO/`), coût réel 2,15 $, ~13 min.
+- VALIDE (indirectement) : la revue elle-même a trouvé 3 défauts réels dans `revue_code.py` fraîchement
+  écrit (pas de `--max-budget-usd`, `_tuer_arbre` non cross-platform, bug de parsing `charger_zones`)
+  — tous corrigés, testés.
+- EN ATTENTE : invocation via tâche planifiée Windows (schtasks), non testée.
 
 ## Prochaine étape exacte
-Trancher l'interface de la commande de lancement (Phase 1 de `roadmap_revue_code_nocturne.md`).
-Le wakeup 21h00 est actif dans cette session et lancera seul `lancer_nuit.cmd` puis surveillera
-l'exécution.
+Phase 2 de `roadmap_revue_code_nocturne.md` : conversion des constats `/code-review` en fichier
+markdown priorisé, langage simple, écrit dans `<cible>/ROBERTO/roadmap_revue_<date>.md`.
 
 ## Question bloquante pour la session suivante
-Aucune.
+Garder `--max-budget-usd` dans `revue_code.py` (désaccord non tranché avec l'utilisateur) ou le
+retirer ?

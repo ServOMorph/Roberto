@@ -1,3 +1,13 @@
+## v0.9 — 2026-09-04
+
+### Ajouté
+- `PLANIFICATEUR/revue_code.py` : Phase 1 de `roadmap_revue_code_nocturne.md`. Résout la cible
+  (alias `.claude/zones.md` ou chemin direct), lance `claude -p "/code-review <niveau>"
+  --restricted` (lecture seule + `Bash(git:*)`, jamais Write/Edit, `--max-budget-usd`), écrit la
+  sortie brute dans `<cible>/ROBERTO/`. Confinement vérifié en réel sur Roberto.
+- `PLANIFICATEUR/test_revue_code.py` : 18 tests unitaires (résolution de zones, construction de
+  commande, écriture confinée).
+
 ## v0.8 — 2026-09-04
 
 ### Ajouté
