@@ -127,7 +127,7 @@ function broadcastAndNotify(project, payload) {
 }
 
 function logLine(text) {
-  fs.appendFile(MESSAGES_LOG, `${new Date().toISOString()}\t[DEBUG] ${text}\n`, () => {});
+  fs.appendFile(MESSAGES_LOG, `${new Date().toISOString()}\t[DEBUG] ${text}\n`, "utf8", () => {});
 }
 
 function sendPushNotification(text, title) {
@@ -424,7 +424,7 @@ const httpServer = http.createServer((req, res) => {
       }
 
       const line = `${new Date().toISOString()}\t[DEBUG] ${oneLine(text)}\n`;
-      fs.appendFile(MESSAGES_LOG, line, () => {});
+      fs.appendFile(MESSAGES_LOG, line, "utf8", () => {});
 
       res.writeHead(200);
       res.end("ok");
@@ -529,7 +529,7 @@ wss.on("connection", (ws) => {
 
     if (msg.type === "client.log") {
       const line = `${new Date().toISOString()}\t[DEBUG] ${oneLine(msg.text)}\n`;
-      fs.appendFile(MESSAGES_LOG, line, () => {});
+      fs.appendFile(MESSAGES_LOG, line, "utf8", () => {});
       return;
     }
 
@@ -563,7 +563,7 @@ wss.on("connection", (ws) => {
       if (!text) return;
       const line = `${new Date().toISOString()}\t${text}\t[canal:${channel}]\n`;
 
-      fs.appendFile(projectLog(project), line, () => {
+      fs.appendFile(projectLog(project), line, "utf8", () => {
         ws.send(JSON.stringify({ type: "message.ack", id: msg.id }));
       });
 
@@ -589,7 +589,7 @@ wss.on("connection", (ws) => {
 
       const caption = msg.caption ? ` ${oneLine(msg.caption)}` : "";
       const line = `${new Date().toISOString()}\t[IMAGE]${caption} -> ${target}\n`;
-      fs.appendFile(projectLog(project), line, () => {});
+      fs.appendFile(projectLog(project), line, "utf8", () => {});
 
       ws.send(JSON.stringify({ type: "state", state: "processing" }));
       return;
@@ -615,11 +615,11 @@ wss.on("connection", (ws) => {
       fs.mkdirSync(filesDir, { recursive: true });
       const filename = `${new Date().toISOString().replace(/[:.]/g, "-")}__${base}`;
       const target = path.join(filesDir, filename);
-      fs.writeFile(target, content, () => {});
+      fs.writeFile(target, content, "utf8", () => {});
 
       const caption = msg.caption ? ` ${oneLine(msg.caption)}` : "";
       const line = `${new Date().toISOString()}\t[FICHIER]${caption} -> ${target}\n`;
-      fs.appendFile(projectLog(project), line, () => {});
+      fs.appendFile(projectLog(project), line, "utf8", () => {});
 
       ws.send(JSON.stringify({ type: "state", state: "processing" }));
       return;
@@ -629,7 +629,7 @@ wss.on("connection", (ws) => {
       const project = resolveProject(msg.project) || DEFAULT_PROJECT;
       const label = msg.value === "ok" ? "Validation : ok" : "Validation : a corriger";
       const line = `${new Date().toISOString()}\t${label}\n`;
-      fs.appendFile(projectLog(project), line, () => {});
+      fs.appendFile(projectLog(project), line, "utf8", () => {});
 
       ws.send(JSON.stringify({ type: "state", state: "processing" }));
     }

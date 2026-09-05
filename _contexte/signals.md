@@ -1,4 +1,4 @@
-# Signals — roberto   (MAJ 2026-09-04)
+# Signals — roberto   (MAJ 2026-09-05)
 
 ## Actions ouvertes
 - [P1|ouvert] Nuit réelle du planificateur (déclenchée le 2026-09-04 à 21h00) : tâche `audit-deps`
@@ -78,37 +78,37 @@
 - [P3|ouvert] Décider la proposition des 3 agents de dev (Bridge / PWA / Déploiement-Ops).
   fait quand: validée (agent_role.md créés) ou rejetée. réf:
   com_telephone/_docs/agents_dev_proposition.md
+- [P3|ouvert] Décider si SérénIATech_dev doit devenir une zone déclarée (`.claude/zones.md` +
+  `_contexte/` dédié) plutôt qu'un traitement ad hoc via roberto — session 2026-09-05 y a appliqué
+  3 correctifs (`routes_orga.py`) sans aucun suivi de zone. fait quand: décision actée (zone créée
+  et `/start` fonctionnel dessus, ou traitement ad hoc confirmé durablement). réf: session du
+  2026-09-05, `.claude/zones.md`
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-09-04
+# Session du 2026-09-05
 
 ## Décisions prises
-- Phase 1 de `roadmap_revue_code_nocturne.md` tranchée : interface via alias `.claude/zones.md`
-  (ou chemin direct), confinement `claude -p --restricted` (lecture seule + `Bash(git:*)`, jamais
-  Write/Edit).
-- Sortie brute écrite par le script Python lui-même dans `<cible>/ROBERTO/`, jamais par le process
-  `claude` — renforce le confinement au-delà de ce que `--restricted` garantit seul.
-- `--max-budget-usd` conservé dans `revue_code.py` malgré l'objection de l'utilisateur
-  (abonnement) : protège la fenêtre de tokens partagée avec les autres tâches nocturnes, pas un
-  enjeu de facturation — désaccord non tranché.
+- SérénIATech_dev (local, sans remote GitHub) : une routine cloud planifiée est impossible (pas
+  d'accès filesystem local) -> pivot vers un job cron de session (`CronCreate`), donc perdu si la
+  session se ferme avant l'échéance.
+- Dans `api_orga_question_convertir` (SérénIATech_dev) : ajout de la tâche de remplacement avant
+  suppression de la question, pour éviter la perte de données si l'ajout échoue.
 
-## Livrables produits ou modifiés
-- `PLANIFICATEUR/revue_code.py` : créé (Phase 1 de `roadmap_revue_code_nocturne.md`).
-- `PLANIFICATEUR/test_revue_code.py` : créé, 18 tests, mockés (aucun appel réel à `claude`).
+## Livrables produits ou modifiés (hors dépôt roberto)
+- SérénIATech_dev/UI/src/sereniatech/routes_orga.py : 3 correctifs (perte de données sur échec
+  d'ajout, duplication de `_supprimer_ligne_*`, dossier cible dérivé de `source` au lieu de
+  `zones.md` courant).
 
 ## Hypothèses validées / invalidées
-- VALIDE : confinement de `/code-review max` sans surveillance — vérifié en réel sur Roberto
-  (`git status` avant/après identique hors `ROBERTO/`), coût réel 2,15 $, ~13 min.
-- VALIDE (indirectement) : la revue elle-même a trouvé 3 défauts réels dans `revue_code.py` fraîchement
-  écrit (pas de `--max-budget-usd`, `_tuer_arbre` non cross-platform, bug de parsing `charger_zones`)
-  — tous corrigés, testés.
-- EN ATTENTE : invocation via tâche planifiée Windows (schtasks), non testée.
+- VALIDE : le job cron de session (04h02) a déclenché `/code-review` et produit 3 constats
+  exploitables.
+- INVALIDE : routine cloud planifiée -> impossible sans remote GitHub -> pivot cron de session.
+- EN ATTENTE : aucune suite de tests identifiée dans SérénIATech_dev pour valider les 3 correctifs.
 
 ## Prochaine étape exacte
-Phase 2 de `roadmap_revue_code_nocturne.md` : conversion des constats `/code-review` en fichier
-markdown priorisé, langage simple, écrit dans `<cible>/ROBERTO/roadmap_revue_<date>.md`.
+Décider si SérénIATech_dev doit devenir une zone à part entière (`.claude/zones.md` +
+`_contexte/`) pour ne plus dépendre d'un traitement ad hoc via roberto.
 
 ## Question bloquante pour la session suivante
-Garder `--max-budget-usd` dans `revue_code.py` (désaccord non tranché avec l'utilisateur) ou le
-retirer ?
+SérénIATech_dev devient-il une zone déclarée, ou reste-t-il traité en ad hoc ?

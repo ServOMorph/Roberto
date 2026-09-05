@@ -72,10 +72,33 @@ try {
   unreadProjects = new Set(JSON.parse(localStorage.getItem("unreadProjects")) || []);
 } catch {}
 
+let connectedProjects = new Map();
+let projectActivityTimers = new Map();
+const PROJECT_ACTIVE_TIMEOUT = 5 * 60 * 1000;
+
 function saveUnread() {
   try {
     localStorage.setItem("unreadProjects", JSON.stringify([...unreadProjects]));
   } catch {}
+}
+
+function markProjectConnected(projectId) {
+  if (!projectId) return;
+  connectedProjects.set(projectId, Date.now());
+  if (projectActivityTimers.has(projectId)) {
+    clearTimeout(projectActivityTimers.get(projectId));
+  }
+  const timer = setTimeout(() => {
+    connectedProjects.delete(projectId);
+    projectActivityTimers.delete(projectId);
+    if (isHomeView()) renderProjectList();
+  }, PROJECT_ACTIVE_TIMEOUT);
+  projectActivityTimers.set(projectId, timer);
+  if (isHomeView()) renderProjectList();
+}
+
+function isProjectConnected(projectId) {
+  return connectedProjects.has(projectId);
 }
 
 function isHomeView() {
@@ -475,6 +498,9 @@ function connect() {
   ws.onopen = () => {
     setConnected(true);
     clearTimeout(reconnectTimer);
+    for (const p of projects) {
+      markProjectConnected(p.id);
+    }
     sendVisible();
   };
 
@@ -497,16 +523,20 @@ function connect() {
     } else if (msg.type === "assistant.text") {
       if (typeof msg.text !== "string" || !msg.text.trim()) return;
       if (markMid(msg.mid)) return;
-      if (msg.project && (msg.project !== currentProject || isHomeView())) {
-        pushHistory({ type: "text", role: "assistant", text: msg.text }, msg.project);
-        markProjectNews(msg.project);
-        return;
+      if (msg.project) {
+        markProjectConnected(msg.project);
+        if (msg.project !== currentProject || isHomeView()) {
+          pushHistory({ type: "text", role: "assistant", text: msg.text }, msg.project);
+          markProjectNews(msg.project);
+          return;
+        }
       }
       hideThinking();
       addBubble("assistant", msg.text);
       showValidationButtons(!!msg.awaitValidation);
       showChoiceButtons(msg.options, msg.recommended);
     } else if (msg.type === "assistant.audio") {
+      if (msg.project) markProjectConnected(msg.project);
       if (isHomeView()) return;
       if (msg.project && msg.project !== currentProject) return;
       playAssistantAudio(msg.audio, msg.mime);
@@ -516,11 +546,11 @@ function connect() {
 
 function playAssistantAudio(base64, mime) {
   const inVoiceMode = voiceScreen.classList.contains("active") && !voiceCancelled;
-  if (inVoiceMode) {
-    voiceCircle.classList.remove("thinking", "paused");
-    voiceCircle.classList.add("done");
-    voiceStatus.textContent = "Titi vous répond...";
-  }
+  if (!inVoiceMode) return;
+
+  voiceCircle.classList.remove("thinking", "paused");
+  voiceCircle.classList.add("done");
+  voiceStatus.textContent = "Titi vous répond...";
 
   const audio = assistantAudioEl;
   currentAudio = audio;
@@ -995,6 +1025,7 @@ function projectLabel(id) {
 function renderProjectList() {
   projectList.innerHTML = "";
   for (const p of projects) {
+    if (!isProjectConnected(p.id)) continue;
     const row = document.createElement("button");
     row.type = "button";
     row.className = "projectRow" + (unreadProjects.has(p.id) ? " hasNews" : "");
@@ -1040,6 +1071,7 @@ function showHome() {
 
 function openProject(id) {
   currentProject = id;
+  markProjectConnected(id);
   try {
     localStorage.setItem("currentProject", id);
   } catch {}

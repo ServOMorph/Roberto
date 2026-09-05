@@ -8,10 +8,38 @@
       "modele": "sonnet",
       "budget_usd": 0.6,
       "timeout_min": 15,
-      "outils": ["Read", "Glob", "Grep", "Write"],
-      "statut": "en_attente",
-      "tentatives": 0,
-      "historique": []
+      "outils": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Write"
+      ],
+      "statut": "refus",
+      "tentatives": 1,
+      "historique": [
+        {
+          "date": "2026-09-04T21:04:01",
+          "raison": "outils_refuses",
+          "duree_s": 94.5,
+          "cout_usd": 0.18582159999999998,
+          "log": "D:\\ServOMorph\\Roberto\\PLANIFICATEUR\\logs\\audit-deps_1.log"
+        }
+      ],
+      "log": "D:\\ServOMorph\\Roberto\\PLANIFICATEUR\\logs\\audit-deps_1.log",
+      "duree_s": 94.5,
+      "cout_usd": 0.18582159999999998,
+      "raison": "outils_refuses",
+      "detail": "Le run s'est termine sans erreur mais 1 appel(s) d'outil ont ete refuses (Write). Resultat non fiable.",
+      "refus": [
+        {
+          "tool_name": "Write",
+          "tool_use_id": "toolu_01PCLtU2dDSMXDT8zEGcKpzf",
+          "tool_input": {
+            "file_path": "D:\\ServOMorph\\creazik_v2\\NOTES_AUDIT_DEPS.md",
+            "content": "# Audit des dépendances — crea_zik\n\nDate : 2026-09-04\nSource : `package.json` + recherche des usages dans `src/`, les fichiers de config racine (`electron.vite.config.ts`, `vitest.config.ts`, `tsconfig*.json`, `electron-builder.yml`) et `scripts/dev.mjs`.\n\n## Dependencies (production)\n\n| Paquet | Référencé dans le code | Détail |\n|---|---|---|\n| `@reduxjs/toolkit` | ✅ | store Redux (`store/*.ts`, `Mixer.tsx`, `store/projectActions.ts`) |\n| `@spotify/basic-pitch` | ✅ | `ia/transcribe.ts` |\n| `@tensorflow/tfjs` | ✅ | `ia/transcribe.ts` |\n| `@tonejs/midi` | ✅ | `ia/midiImport.ts` |\n| `react` | ✅ | `PianoRoll.tsx`, `App.tsx`, `useProjectIO.ts`, `Mixer.tsx`, `main.tsx` |\n| `react-dom` | ✅ | `main.tsx` |\n| `react-redux` | ✅ | `main.tsx`, `App.test.tsx`, `store/hooks.ts` |\n| `tone` | ✅ | moteur audio (`audio/*.ts`, `project/renderProject.ts`) |\n\n**Aucune dépendance de production inutilisée détectée.**\n\n## devDependencies\n\n| Paquet | Référencé | Détail |\n|---|---|---|\n| `@testing-library/jest-dom` | ✅ | `test/setup.ts` |\n| `@testing-library/react` | ✅ | `App.test.tsx` |\n| `@types/node` | ✅ (via config) | déclaré dans `types` de `tsconfig.node.json` |\n| `@types/react` | ⚠️ indirect | aucun import explicite ; typage ambiant requis par TypeScript pour `react` (usage normal pour un paquet `@types/*`, ne pas retirer) |\n| `@types/react-dom` | ⚠️ indirect | idem, typage ambiant pour `react-dom` |\n| `@vitejs/plugin-react` | ✅ | `vitest.config.ts`, `electron.vite.config.ts` |\n| `electron` | ✅ | `src/main/index.ts`, `src/preload/index.ts`, exécuté par `electron-vite`/`electron-builder` |\n| `electron-builder` | ✅ | script `package`, config `electron-builder.yml` |\n| `electron-vite` | ✅ | script `dev`/`build`, `scripts/dev.mjs`, `electron.vite.config.ts` |\n| `jsdom` | ✅ (via config) | `environment: 'jsdom'` dans `vitest.config.ts` (pas d'import direct, usage attendu) |\n| `typescript` | ✅ (outil CLI) | script `typecheck` (`tsc`), pas d'import direct attendu |\n| `vite` | ❌ **non référencé** | aucun `import ... from 'vite'` trouvé dans le repo ; probablement présent uniquement comme dépendance transitive/peer de `vitest` et `electron-vite` (déjà réexportée via `vitest/config`) |\n| `vitest` | ✅ | `import ... from 'vitest'` dans les 10 fichiers `*.test.ts(x)`, script `test`/`test:watch` |\n\n## Points relevés\n\n- **`vite`** est la seule dépendance sans référence directe (ni import, ni mention dans une config). Elle est presque certainement tirée par `vitest` et `electron-vite` en interne ; sa présence explicite en devDependency sert probablement à figer une version, mais elle pourrait être supprimée sans casser le code (à vérifier avec `npm ls vite` avant suppression, non exécuté ici car aucune commande n'a été lancée).\n- `@types/react` et `@types/react-dom` n'ont pas d'usage \"actif\" au sens d'un import, mais c'est le fonctionnement normal des paquets `@types/*` (typage ambiant pour TypeScript) — à conserver.\n- `typescript` et `electron-builder` sont des outils CLI invoqués via les scripts npm, sans import direct — usage normal, à conserver.\n"
+          }
+        }
+      ]
     },
     {
       "id": "typecheck",
@@ -21,9 +49,23 @@
       "budget_usd": 1.5,
       "heure_min": "01:00",
       "timeout_min": 30,
-      "statut": "en_attente",
-      "tentatives": 0,
-      "historique": []
+      "statut": "faite",
+      "tentatives": 1,
+      "historique": [
+        {
+          "date": "2026-09-05T01:00:54",
+          "raison": "succes",
+          "duree_s": 53.4,
+          "cout_usd": 0.08385320000000002,
+          "log": "D:\\ServOMorph\\Roberto\\PLANIFICATEUR\\logs\\typecheck_1.log"
+        }
+      ],
+      "log": "D:\\ServOMorph\\Roberto\\PLANIFICATEUR\\logs\\typecheck_1.log",
+      "duree_s": 53.4,
+      "cout_usd": 0.08385320000000002,
+      "raison": "succes",
+      "detail": "`npm run typecheck` ne remonte aucune erreur (les deux passes `tsc --noEmit` sur `tsconfig.node.json` et `tsconfig.web.json` sont propres), et `npm test` passe intégralement (64/64 tests). Il n'y avait donc rien à corriger ni à committer sur la branche `nuit/typecheck`.\n\nRemarques :\n- La branche `nuit/typecheck` a bien été créée depuis `main`, mais reste identique à `main` puisqu'aucun fix n'était nécessaire.\n- Je n'ai pas touché aux modifications non commitées préexistantes sur `AGENTS.md` et `GEMINI.md` (présentes avant même ma création de branche) : elles sont hors périmètre de cette tâche, je les laisse en l'état dans le working directory.\n- Aucun push n'a été effectué.",
+      "refus": []
     }
   ]
 }

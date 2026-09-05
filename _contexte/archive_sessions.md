@@ -4,6 +4,40 @@ Sessions déplacées ici par `/close` (la plus récente reste dans `signals.md`)
 
 ---
 
+# Session du 2026-09-04
+
+## Décisions prises
+- Phase 1 de `roadmap_revue_code_nocturne.md` tranchée : interface via alias `.claude/zones.md`
+  (ou chemin direct), confinement `claude -p --restricted` (lecture seule + `Bash(git:*)`, jamais
+  Write/Edit).
+- Sortie brute écrite par le script Python lui-même dans `<cible>/ROBERTO/`, jamais par le process
+  `claude` — renforce le confinement au-delà de ce que `--restricted` garantit seul.
+- `--max-budget-usd` conservé dans `revue_code.py` malgré l'objection de l'utilisateur
+  (abonnement) : protège la fenêtre de tokens partagée avec les autres tâches nocturnes, pas un
+  enjeu de facturation — désaccord non tranché.
+
+## Livrables produits ou modifiés
+- `PLANIFICATEUR/revue_code.py` : créé (Phase 1 de `roadmap_revue_code_nocturne.md`).
+- `PLANIFICATEUR/test_revue_code.py` : créé, 18 tests, mockés (aucun appel réel à `claude`).
+
+## Hypothèses validées / invalidées
+- VALIDE : confinement de `/code-review max` sans surveillance — vérifié en réel sur Roberto
+  (`git status` avant/après identique hors `ROBERTO/`), coût réel 2,15 $, ~13 min.
+- VALIDE (indirectement) : la revue elle-même a trouvé 3 défauts réels dans `revue_code.py` fraîchement
+  écrit (pas de `--max-budget-usd`, `_tuer_arbre` non cross-platform, bug de parsing `charger_zones`)
+  — tous corrigés, testés.
+- EN ATTENTE : invocation via tâche planifiée Windows (schtasks), non testée.
+
+## Prochaine étape exacte
+Phase 2 de `roadmap_revue_code_nocturne.md` : conversion des constats `/code-review` en fichier
+markdown priorisé, langage simple, écrit dans `<cible>/ROBERTO/roadmap_revue_<date>.md`.
+
+## Question bloquante pour la session suivante
+Garder `--max-budget-usd` dans `revue_code.py` (désaccord non tranché avec l'utilisateur) ou le
+retirer ?
+
+---
+
 # Session du 2026-09-04 (suite)
 
 ## Décisions prises
