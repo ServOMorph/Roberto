@@ -3,10 +3,10 @@
 ## Actions ouvertes
 - [P1|ouvert] Nuit réelle du planificateur (déclenchée le 2026-09-04 à 21h00) : tâche `audit-deps`
   terminée en statut `refus` — l'outil `Write`, pourtant listé dans `outils` de la tâche et couvert
-  par `--tools`, a été refusé au runtime (cause non investiguée cette session). Tâche `typecheck`
-  (heure_min 01:00) restée `en_attente` dans `queue.json` ; état du process orchestrateur au-delà
-  de 21h04 non vérifié. fait quand: cause du refus Write identifiée et corrigée (ou contournée),
-  une nuit complète sans refus imprévu, rapport `rapport_<date>.html` lisible. réf:
+  par `--tools`, a été refusé au runtime (cause non investiguée). La tâche `typecheck` a ensuite
+  réussi le 2026-09-05 à 01:00 (branche créée, typecheck et 64/64 tests verts ; aucun commit car
+  aucun correctif). fait quand: cause du refus Write identifiée et corrigée (ou contournée), une
+  nuit complète sans refus imprévu, rapport `rapport_<date>.html` lisible. réf:
   PLANIFICATEUR/queue.json (tâche audit-deps, historique), roadmap_planificateur_nuit.md
   (gate Phase 2)
 - [P2|ouvert] Workflow de revue de code nocturne (`roadmap_revue_code_nocturne.md`) : Phase 1
@@ -39,11 +39,11 @@
   creazik_v2. fait quand: l'utilisateur relance le sujet et valide (ou écarte) la proposition.
   réf: creazik_v2/roadmap_impl.md, creazik_v2/tests_manuels.md, IA_Life/tools/ (pattern de
   référence)
-- [P2|ouvert] Vérifier en réel que `git checkout -b` et `git commit` passent la liste blanche
-  `--allowedTools "Bash(git:*)"` (non testé : seuls `git push` refusé et `npm run typecheck`
-  autorisé l'ont été). fait quand: la tâche `typecheck` du queue.json d'exemple aboutit sans
-  statut `refus`, ou la liste blanche est corrigée. réf: PLANIFICATEUR/orchestrateur.py
-  (BASH_AUTORISE_DEFAUT), PLANIFICATEUR/logs/
+- [P2|ouvert] Vérifier en réel que `git commit` passe la liste blanche `--allowedTools
+  "Bash(git:*)"` : `git checkout -b` est désormais validé par la tâche `typecheck`, mais aucun
+  commit n'a été tenté puisqu'aucun correctif n'était nécessaire. fait quand: une tâche confinée
+  crée un changement autorisé et effectue un commit local, ou la liste blanche est corrigée. réf:
+  PLANIFICATEUR/orchestrateur.py (BASH_AUTORISE_DEFAUT), PLANIFICATEUR/logs/
 - [P1|ouvert] Arbitrer les 3 roadmaps désormais `[EN COURS]` simultanément :
   `roadmap_planificateur_nuit.md` (Phase 3), `roadmap_ameliorations.md` (Phase 1, jamais démarrée),
   `roadmap_revue_code_nocturne.md` (Phase 1, script écrit et testé cette session). Les deux
@@ -67,6 +67,16 @@
   FAIT, Phases 3-5 TODO : score combiné priorité+envie, intégration dans `quotidien.md`, tests
   bout en bout) — non commitée, à reprendre dans le fil de travail normal de ce projet. réf:
   `roadmap_workflow_quotidien.md`
+- [P2|ouvert] Workflow `/refacto_projet` créé : sélection automatique (ou chemin explicite),
+  bascule obligatoire sur Codex `gpt-6-astra`, analyse non destructive, tests de référence et
+  plan unique dans `<projet>/ROBERTO/`. Jamais exécuté sur un projet réel. fait quand: la commande
+  est exécutée dans Codex/Astra sur un projet, le plan est produit et son contenu jugé exploitable.
+  réf: .claude/commands/refacto_projet.md, PLANIFICATEUR/selection_projet.py
+- [P3|ouvert] Contrôle d'intégrité de clôture indisponible : `scripts/check_kit.py`, imposé par
+  `.claude/commands/close.md`, n'existe pas dans ce dépôt (commande exécutée le 2026-09-06,
+  exit 1). Écart connu à corriger en Phase 1 des améliorations Roberto. fait quand: le script est
+  ajouté et exécuté avec succès, ou la procédure `/close` est corrigée pour ce dépôt. réf:
+  .claude/commands/close.md, scripts/check_kit.py
 - [P1|ouvert] Valider en réel les notifications push, téléphone verrouillé, après re-souscription
   de la PWA. fait quand: l'utilisateur confirme réception fiable sur écran verrouillé (5 envois
   sur 5) et aucun doublon. réf: tests_manuels.md, com_telephone/voice-code-bridge/server/server.js
@@ -100,32 +110,23 @@
 # Session du 2026-09-06
 
 ## Décisions prises
-- Sélection automatique du projet à review : script autonome (`selection_projet.py`), pas intégré
-  au planificateur nocturne ni à `revue_code.py` — choix explicite de l'utilisateur.
-- Suivi des revues stocké en JSON structuré (`suivi_revues.json`), pas en Markdown.
-- Critères de pertinence retenus : dépôt `.git` + `.claude/` présents, modifié il y a moins de
-  90 jours (seuil ajustable).
-- Coûts affichés/calculés retirés du projet (workflow revue_code + infra planificateur nocturne
-  existante) ; `--max-budget-usd` gardé comme garde-fou de temps, pas pour la facturation —
-  désaccord antérieur tranché.
+- `/refacto_projet` est un workflow de planification exclusivement : aucun code ne peut être
+  refactorisé pendant son exécution.
+- L'analyse doit être reprise dans Codex avec `gpt-6-astra` après sélection de la cible.
 
 ## Livrables produits ou modifiés
-- `PLANIFICATEUR/selection_projet.py` : créé, 14 tests (`test_selection_projet.py`)
-- `PLANIFICATEUR/suivi_revues.json` : créé (Roberto + SérénIATech_dev)
-- `.claude/commands/revue_projet.md` : créé (sélection -> confirmation -> revue -> suivi)
-- `PLANIFICATEUR/orchestrateur.py`, `overlay.py`, `rapport.py`, `notifier.py`, `tache.py` : retrait
-  de tout affichage/calcul de coût (`cout_usd`, `total_cost_usd`), `--max-budget-usd` conservé
-- `test_planificateur.py` : adapté (68/68 tests passent)
+- `.claude/commands/refacto_projet.md` : créé ; sélection, analyse, tests avant/après et plan de
+  refactorisation avec rollback.
+- `_contexte/signals.md` : état de la nuit réelle corrigé (`typecheck` réussie).
 
 ## Hypothèses validées / invalidées
-- VALIDE : `selection_projet.py` fonctionne en réel sur les 2 racines demandées (35 projets
-  pertinents détectés)
-- VALIDE : suite complète PLANIFICATEUR (68 tests) passe après retrait des coûts
-- EN ATTENTE : `/revue_projet` jamais invoquée en réel (lancerait une vraie revue)
+- VALIDE : la tâche `typecheck` de la nuit a créé sa branche et a terminé avec 64/64 tests verts.
+- EN ATTENTE : `/refacto_projet` n'a pas encore été exécutée sur un projet réel dans Codex/Astra.
+- EN ATTENTE : le contrôle `python scripts/check_kit.py` est indisponible, car le script manque.
 
 ## Prochaine étape exacte
-Tester `/revue_projet` en réel sur un vrai projet (ex. `Appli_TSA_SDI_TDAH`, en tête de liste),
-vérifier le bilan produit et l'écriture dans `suivi_revues.json`.
+Lancer `/refacto_projet` sans argument, passer sur Codex Astra avec le chemin proposé, puis
+évaluer le plan généré avant d'autoriser tout refactor.
 
 ## Question bloquante pour la session suivante
 Aucune.

@@ -15,33 +15,9 @@ Markdown, Python (`ollama_call.py`), templates de commandes Claude Code.
 - `PLANIFICATEUR/` : orchestrateur de tâches Claude Code nocturnes (confinées, butoir, rapport)
 
 ## État actuel
-Roberto héberge le **bridge com_tel** (serveur Node + STT + TTS, lancé par `com_manager.py`) et
-en est le template de référence. Projets raccordés : `ia_life`, `tsa`, `roberto`, `creazik_v2`
-(tous en mode raccordé, plus aucune copie autonome). PWA : écran d'accueil avec pastille de
-messages non lus (aussi sur le bouton "Projets" en vue chat) et bouton de mise en veille du PC
-(avec confirmation), partage image + JSON, notifications fiabilisées (détection premier-plan,
-anti-doublon `mid`, un abonnement par `deviceId`). Docs `com_telephone/_docs/` : audit sécurité
-(S1-S3+S6 corrigés), glossaire, analyse accès externe Marie (en attente). Registre :
-`com_telephone/DEPLOYMENTS.md`.
-
-Chantier en cours : **planificateur nocturne** (`PLANIFICATEUR/`, `roadmap_planificateur_nuit.md`) —
-lance des `claude -p --restricted` la nuit, confinés par `allowlist.txt`, butoir 06:00, retry sur
-la limite 5 h, rapport HTML + push com_tel, overlays plein écran d'annonce et de bilan (validés
-visuellement). Phases 1-2 [FAIT] (36 tests + validations réelles), Phase 3 [EN COURS]. Nuit réelle
-du 2026-09-04 21h00 déclenchée mais gate Phase 2 non franchi (une tâche en `refus`, `Write` refusé
-malgré `--tools`, cause non investiguée).
-
-Chantier en cours : **revue de code nocturne** (`roadmap_revue_code_nocturne.md`) — `/code-review`
-niveau max déclenché par une tâche planifiée par l'utilisateur (pas d'overlay), sortie unique dans
-`<projet cible>/ROBERTO/` en langage simple priorisé par urgence, discussion vocale via
-com_telephone, correctifs exécutés la nuit suivante par le planificateur. Phase 1 [EN COURS] :
-`PLANIFICATEUR/revue_code.py` écrit et testé (18 tests + confinement vérifié en réel), invocation
-via tâche planifiée Windows non testée. Outil complémentaire `PLANIFICATEUR/selection_projet.py` +
-commande `/revue_projet` : choisit automatiquement le projet le plus pertinent à review parmi
-`Documents\ServOMorph` et `D:\ServOMorph` (dépôt `.git`+`.claude`, modifié <90j), suivi dans
-`suivi_revues.json` — testé pour la sélection seule, jamais invoqué de bout en bout. Tout
-affichage/calcul de coût a été retiré du planificateur nocturne et du workflow revue de code ;
-`--max-budget-usd` reste un garde-fou de temps, pas un indicateur de facturation.
-
-En attente (validation réelle) : notifications téléphone verrouillé, raccordement creazik_v2,
-mise en veille depuis la PWA, première nuit du planificateur.
+Roberto héberge le **bridge com_tel** (Node, STT et TTS) et demeure le template de référence des
+projets raccordés. Le planificateur nocturne est en Phase 3 : `typecheck` a réussi lors de la nuit
+réelle, mais `audit-deps` refuse encore l'outil `Write`. La revue nocturne est en Phase 1 ; son
+script et la sélection automatique sont testés, mais le déclenchement Windows et une revue complète
+restent à valider. `/refacto_projet` prépare désormais, dans Codex avec Astra, un plan non
+destructif de refactorisation avec tests avant/après ; sa première exécution réelle est en attente.

@@ -1,3 +1,14 @@
+## v0.11 — 2026-09-06
+
+### Ajouté
+- `.claude/commands/refacto_projet.md` : sélectionne une cible ou reçoit son chemin, impose une
+  analyse dans Codex `gpt-6-astra`, établit les tests de référence et écrit un plan de
+  refactorisation non destructif avec contrôles avant/après, rollback et critères d'acceptation.
+
+### Corrigé
+- Contexte de la nuit du planificateur : `typecheck` a bien réussi le 2026-09-05 (branche créée,
+  64/64 tests verts) ; le refus de `Write` sur `audit-deps` reste ouvert.
+
 ## v0.10 — 2026-09-06
 
 ### Ajouté

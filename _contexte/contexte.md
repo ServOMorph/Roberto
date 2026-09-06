@@ -7,22 +7,14 @@ Copie réorganisée de claude-vibecoding-kit, réalisée étape par étape.
 Markdown, Python (ollama_call.py), templates de commandes Claude Code
 
 ## État actuel (réécrit intégralement à chaque /close)
-Roberto héberge le **bridge com_tel** (serveur Node 5000 + STT 5001 + TTS 5002 via
-`com_manager.py`, `.env` hors git) et en est le template de référence ; `ia_life`, `tsa`,
-`roberto`, `creazik_v2` tous raccordés. Audit `_docs/audit_securite_2026-08-28.md` : S1-S3+S6
-corrigés, S4/S5/S7/S8 ouverts. Chantier **planificateur nocturne** (`PLANIFICATEUR/`) : Phase 3
-[EN COURS] ; nuit réelle du 2026-09-04 21h00 déclenchée mais gate Phase 2 non franchi (tâche
-`audit-deps` en statut `refus`, cause non investiguée). Chantier **revue de code nocturne**
-(`roadmap_revue_code_nocturne.md`) : Phase 1 [EN COURS] — `revue_code.py` testé, invocation via
-tâche planifiée Windows non testée ; nouvel outil `selection_projet.py` + commande
-`/revue_projet` (sélection auto du projet le plus pertinent, suivi dans `suivi_revues.json`),
-jamais invoquée de bout en bout. Tout affichage/calcul de coût retiré du projet (2026-09-06),
-`--max-budget-usd` gardé comme garde-fou. Trois roadmaps [EN COURS] simultanées (arbitrage non
-tranché, cf. `signals.md`).
+Roberto héberge le **bridge com_tel** (Node 5000, STT 5001, TTS 5002) et reste le template de
+référence des projets raccordés. Planificateur nocturne : Phase 3 [EN COURS] ; nuit réelle avec
+`typecheck` réussie, mais `audit-deps` refuse encore `Write`. Revue nocturne : Phase 1 [EN COURS],
+`revue_code.py` et la sélection automatique sont testés mais le déclenchement Windows et une revue
+de bout en bout restent à valider. `/refacto_projet` prépare désormais dans Codex/Astra un plan non
+destructif avec tests avant/après ; première exécution réelle en attente.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-28 : com_telephone rendu multi-projets (routage par `project`, `projects.json`, sélecteur
-  PWA) — développé et durci dans IA_Life, puis promu ici comme template unique.
 - 2026-08-28 : Roberto devient l'hôte du pont (le serveur y tourne) ; IA_Life et TSA sont des
   projets raccordés. `.env` d'IA_Life réutilisé tel quel (lien téléphone + push préservés).
   Commande `/com_telephone_init` ajoutée pour les futurs déploiements.
@@ -56,3 +48,6 @@ tranché, cf. `signals.md`).
   `suivi_revues.json` ; commande `/revue_projet` enchaîne sélection/confirmation/revue/suivi.
   Désaccord sur `--max-budget-usd` tranché : garde-fou de temps conservé, tout affichage/calcul de
   coût retiré ailleurs (workflow revue_code + planificateur nocturne).
+- 2026-09-06 : `/refacto_projet` sélectionne une cible ou reçoit son chemin, impose la reprise dans
+  Codex `gpt-6-astra`, puis produit uniquement un plan de refactorisation dans `ROBERTO/` avec base
+  de tests, contrôles avant/après, critères d'acceptation et rollback ; il ne modifie pas le code.
