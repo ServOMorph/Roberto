@@ -10,3 +10,5 @@ Décisions déplacées ici par `/close` quand la liste de `contexte.md` dépasse
   l'analyser avant, ne jamais le vider.
 - 2026-08-25 : com_telephone remplacé intégralement par la version validée en réel dans creazik_v2
   (nouvelle source de vérité pour les futurs déploiements).
+- 2026-08-25 : com_manager.py affiche le lien appli (token) au démarrage et démarre tout par
+  défaut sans argument — nécessite TUNNEL_URL dans .env en plus d'AUTH_TOKEN.

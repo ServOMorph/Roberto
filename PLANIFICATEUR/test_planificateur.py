@@ -116,13 +116,11 @@ class TestClassement(unittest.TestCase):
                 "is_error": False,
                 "subtype": "success",
                 "result": "ok",
-                "total_cost_usd": 0.01,
                 "permission_denials": [],
             }
         )
         res = orchestrateur.classer_resultat(0, sortie, "", False)
         self.assertEqual(res["statut"], "faite")
-        self.assertEqual(res["cout_usd"], 0.01)
 
     def test_refus_outils_malgre_is_error_faux(self):
         sortie = json.dumps(
@@ -250,7 +248,6 @@ class TestRapport(unittest.TestCase):
                     "raison": "succes",
                     "detail": "termine",
                     "duree_s": 92,
-                    "cout_usd": 0.12,
                     "tentatives": 1,
                 },
                 {
@@ -291,7 +288,6 @@ class TestRapport(unittest.TestCase):
         self.assertIn("s-refus", contenu)
         self.assertIn("appel(s) d'outil refuses", contenu)
         self.assertIn("#7de7b8", contenu)
-        self.assertIn("0.1200 $", contenu)
         self.assertIn("1 min 32 s", contenu)
         self.assertNotIn("<script>alert(1)</script>", contenu)
 
@@ -377,7 +373,7 @@ class TestNotifier(unittest.TestCase):
     def test_resume(self):
         donnees = {
             "taches": [
-                {"id": "a", "statut": "faite", "cout_usd": 0.2},
+                {"id": "a", "statut": "faite"},
                 {"id": "b", "statut": "echouee", "raison": "timeout"},
                 {"id": "c", "statut": "reportee"},
             ]
@@ -390,7 +386,6 @@ class TestNotifier(unittest.TestCase):
         self.assertIn("1 faite(s)", texte)
         self.assertIn("1 echouee(s)", texte)
         self.assertIn("1 reportee(s)", texte)
-        self.assertIn("0.2000 $", texte)
         self.assertIn("b : timeout", texte)
 
     def test_bridge_injoignable_ne_leve_pas(self):

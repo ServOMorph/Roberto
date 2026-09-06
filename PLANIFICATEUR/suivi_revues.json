@@ -1,0 +1,16 @@
+{
+  "projets": {
+    "C:\\Users\\raph6\\Documents\\SerenIATech\\S\u00e9r\u00e9nIATech_dev": {
+      "nom": "S\u00e9r\u00e9nIATech_dev",
+      "derniere_review": "2026-09-05",
+      "niveau": "max",
+      "resultat": "3 constats, 3 correctifs appliques dans routes_orga.py"
+    },
+    "D:\\ServOMorph\\Roberto": {
+      "nom": "Roberto",
+      "derniere_review": "2026-09-04",
+      "niveau": "max",
+      "resultat": "confinement verifie en reel, 3 defauts trouves et corriges dans revue_code.py"
+    }
+  }
+}

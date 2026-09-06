@@ -1,3 +1,20 @@
+## v0.10 — 2026-09-06
+
+### Ajouté
+- `PLANIFICATEUR/selection_projet.py` : sélectionne automatiquement le projet le plus pertinent à
+  review parmi `Documents\ServOMorph` et `D:\ServOMorph` (dépôt `.git`+`.claude` présents, modifié
+  <90j), classé jamais-review d'abord. Sous-commandes `prochain`/`lister`/`marquer`. 14 tests
+  (`test_selection_projet.py`).
+- `PLANIFICATEUR/suivi_revues.json` : suivi structuré des revues déjà effectuées (Roberto,
+  SérénIATech_dev).
+- `.claude/commands/revue_projet.md` : enchaîne sélection, confirmation, `revue_code.py` et
+  enregistrement dans le suivi.
+
+### Corrigé
+- Retrait de tout affichage/calcul de coût (`cout_usd`, `total_cost_usd`) dans
+  `PLANIFICATEUR/orchestrateur.py`, `overlay.py`, `rapport.py`, `notifier.py`, `tache.py` et
+  `selection_projet.py` — `--max-budget-usd` conservé comme garde-fou de temps, pas de facturation.
+
 ## v0.9 — 2026-09-04
 
 ### Ajouté

@@ -14,7 +14,6 @@ def resumer(donnees, meta, chemin_rapport):
         statut = tache.get("statut")
         if statut in compteurs:
             compteurs[statut] += 1
-    cout = sum(t.get("cout_usd") or 0 for t in taches)
     lignes = [
         "Nuit terminee ({} -> {})".format(
             meta["debut"].strftime("%H:%M"), meta["fin"].strftime("%H:%M")
@@ -25,7 +24,6 @@ def resumer(donnees, meta, chemin_rapport):
             compteurs["echouee"],
             compteurs["reportee"],
         ),
-        "Cout total {:.4f} $".format(cout),
     ]
     a_signaler = [
         t

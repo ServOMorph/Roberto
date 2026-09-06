@@ -13,14 +13,25 @@
   avancée — `PLANIFICATEUR/revue_code.py` créé (résolution cible via alias `.claude/zones.md` ou
   chemin direct, lance `claude -p "/code-review <niveau>" --restricted` en lecture seule +
   `Bash(git:*)`, jamais Write/Edit, écrit lui-même la sortie brute dans `<cible>/ROBERTO/`).
-  18 tests unitaires + confinement vérifié en réel sur Roberto (aucune écriture hors
-  `<cible>/ROBERTO/`, coût réel 2,15 $ pour un run niveau max, ~13 min). `--max-budget-usd`
-  (défaut 5 $) conservé malgré l'objection de l'utilisateur (abonnement) : justifié par la
-  fenêtre 5h partagée avec les autres tâches nocturnes, pas par la facturation — désaccord non
-  tranché. Reste : invocation via tâche planifiée Windows (schtasks) non testée. fait quand:
-  schtasks testé et Phase 2 (génération de la roadmap de review) démarrée. réf:
-  roadmap_revue_code_nocturne.md (Phase 1), PLANIFICATEUR/revue_code.py,
-  PLANIFICATEUR/test_revue_code.py
+  18 tests unitaires + confinement vérifié en réel sur Roberto. Désaccord sur `--max-budget-usd`
+  tranché le 2026-09-06 : conservé comme garde-fou de temps (protège la fenêtre 5h partagée), pas
+  pour la facturation — tout affichage/calcul de coût (`cout_usd`, `total_cost_usd`) retiré du
+  projet (workflow revue_code + infra planificateur nocturne). Reste : invocation via tâche
+  planifiée Windows (schtasks) non testée. fait quand: schtasks testé et Phase 2 (génération de la
+  roadmap de review) démarrée. réf: roadmap_revue_code_nocturne.md (Phase 1),
+  PLANIFICATEUR/revue_code.py, PLANIFICATEUR/test_revue_code.py
+- [P2|ouvert] Sélection automatique du projet à review créée cette session :
+  `PLANIFICATEUR/selection_projet.py` (scan `.git`+`.claude` sur `C:\Users\raph6\Documents\ServOMorph`
+  et `D:\ServOMorph`, seuil 90 jours, classement jamais-review d'abord), suivi structuré dans
+  `PLANIFICATEUR/suivi_revues.json`, commande `.claude/commands/revue_projet.md` enchaînant
+  sélection → confirmation → `revue_code.py` → enregistrement. Testé en réel pour la sélection
+  seule (35 projets pertinents détectés) ; `/revue_projet` jamais invoquée de bout en bout
+  (lancerait une vraie revue). SérénIATech_dev localisé hors des 2 racines scannées
+  (`C:\Users\raph6\Documents\SerenIATech\SérénIATech_dev`) : ne sera jamais repris par la sélection
+  tant que cette racine n'est pas ajoutée. fait quand: `/revue_projet` exécutée en réel sur un vrai
+  projet (bilan produit, `suivi_revues.json` mis à jour), et décision prise sur l'ajout ou non de
+  la racine SérénIATech_dev. réf: PLANIFICATEUR/selection_projet.py,
+  PLANIFICATEUR/suivi_revues.json, .claude/commands/revue_projet.md
 - [P3|ouvert] Piste creazik_v2 explicitement reportée par l'utilisateur ("à voir plus tard",
   reconfirmé le 2026-09-04) : proposition de découpler les gates de phase des tests manuels
   perceptuels (roadmap_impl.md) et d'ajouter un outil de validation automatisée façon IA_Life
@@ -86,29 +97,35 @@
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-09-05
+# Session du 2026-09-06
 
 ## Décisions prises
-- SérénIATech_dev (local, sans remote GitHub) : une routine cloud planifiée est impossible (pas
-  d'accès filesystem local) -> pivot vers un job cron de session (`CronCreate`), donc perdu si la
-  session se ferme avant l'échéance.
-- Dans `api_orga_question_convertir` (SérénIATech_dev) : ajout de la tâche de remplacement avant
-  suppression de la question, pour éviter la perte de données si l'ajout échoue.
+- Sélection automatique du projet à review : script autonome (`selection_projet.py`), pas intégré
+  au planificateur nocturne ni à `revue_code.py` — choix explicite de l'utilisateur.
+- Suivi des revues stocké en JSON structuré (`suivi_revues.json`), pas en Markdown.
+- Critères de pertinence retenus : dépôt `.git` + `.claude/` présents, modifié il y a moins de
+  90 jours (seuil ajustable).
+- Coûts affichés/calculés retirés du projet (workflow revue_code + infra planificateur nocturne
+  existante) ; `--max-budget-usd` gardé comme garde-fou de temps, pas pour la facturation —
+  désaccord antérieur tranché.
 
-## Livrables produits ou modifiés (hors dépôt roberto)
-- SérénIATech_dev/UI/src/sereniatech/routes_orga.py : 3 correctifs (perte de données sur échec
-  d'ajout, duplication de `_supprimer_ligne_*`, dossier cible dérivé de `source` au lieu de
-  `zones.md` courant).
+## Livrables produits ou modifiés
+- `PLANIFICATEUR/selection_projet.py` : créé, 14 tests (`test_selection_projet.py`)
+- `PLANIFICATEUR/suivi_revues.json` : créé (Roberto + SérénIATech_dev)
+- `.claude/commands/revue_projet.md` : créé (sélection -> confirmation -> revue -> suivi)
+- `PLANIFICATEUR/orchestrateur.py`, `overlay.py`, `rapport.py`, `notifier.py`, `tache.py` : retrait
+  de tout affichage/calcul de coût (`cout_usd`, `total_cost_usd`), `--max-budget-usd` conservé
+- `test_planificateur.py` : adapté (68/68 tests passent)
 
 ## Hypothèses validées / invalidées
-- VALIDE : le job cron de session (04h02) a déclenché `/code-review` et produit 3 constats
-  exploitables.
-- INVALIDE : routine cloud planifiée -> impossible sans remote GitHub -> pivot cron de session.
-- EN ATTENTE : aucune suite de tests identifiée dans SérénIATech_dev pour valider les 3 correctifs.
+- VALIDE : `selection_projet.py` fonctionne en réel sur les 2 racines demandées (35 projets
+  pertinents détectés)
+- VALIDE : suite complète PLANIFICATEUR (68 tests) passe après retrait des coûts
+- EN ATTENTE : `/revue_projet` jamais invoquée en réel (lancerait une vraie revue)
 
 ## Prochaine étape exacte
-Décider si SérénIATech_dev doit devenir une zone à part entière (`.claude/zones.md` +
-`_contexte/`) pour ne plus dépendre d'un traitement ad hoc via roberto.
+Tester `/revue_projet` en réel sur un vrai projet (ex. `Appli_TSA_SDI_TDAH`, en tête de liste),
+vérifier le bilan produit et l'écriture dans `suivi_revues.json`.
 
 ## Question bloquante pour la session suivante
-SérénIATech_dev devient-il une zone déclarée, ou reste-t-il traité en ad hoc ?
+Aucune.

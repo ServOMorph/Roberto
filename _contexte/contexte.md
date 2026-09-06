@@ -12,16 +12,15 @@ Roberto héberge le **bridge com_tel** (serveur Node 5000 + STT 5001 + TTS 5002 
 `roberto`, `creazik_v2` tous raccordés. Audit `_docs/audit_securite_2026-08-28.md` : S1-S3+S6
 corrigés, S4/S5/S7/S8 ouverts. Chantier **planificateur nocturne** (`PLANIFICATEUR/`) : Phase 3
 [EN COURS] ; nuit réelle du 2026-09-04 21h00 déclenchée mais gate Phase 2 non franchi (tâche
-`audit-deps` en statut `refus` — `Write` refusé malgré `--tools`, cause non investiguée ; tâche
-`typecheck` restée `en_attente`). Chantier **revue de code nocturne**
-(`roadmap_revue_code_nocturne.md`) : Phase 1 [EN COURS] — `PLANIFICATEUR/revue_code.py` écrit et
-testé (18 tests + confinement vérifié en réel sur Roberto, coût réel 2,15 $/run niveau max),
-invocation via tâche planifiée Windows non testée. Trois roadmaps ont désormais une phase
-[EN COURS] simultanée (arbitrage non tranché, cf. `signals.md`).
+`audit-deps` en statut `refus`, cause non investiguée). Chantier **revue de code nocturne**
+(`roadmap_revue_code_nocturne.md`) : Phase 1 [EN COURS] — `revue_code.py` testé, invocation via
+tâche planifiée Windows non testée ; nouvel outil `selection_projet.py` + commande
+`/revue_projet` (sélection auto du projet le plus pertinent, suivi dans `suivi_revues.json`),
+jamais invoquée de bout en bout. Tout affichage/calcul de coût retiré du projet (2026-09-06),
+`--max-budget-usd` gardé comme garde-fou. Trois roadmaps [EN COURS] simultanées (arbitrage non
+tranché, cf. `signals.md`).
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-25 : com_manager.py affiche le lien appli (token) au démarrage et démarre tout par défaut
-  sans argument — nécessite TUNNEL_URL dans .env en plus d'AUTH_TOKEN.
 - 2026-08-28 : com_telephone rendu multi-projets (routage par `project`, `projects.json`, sélecteur
   PWA) — développé et durci dans IA_Life, puis promu ici comme template unique.
 - 2026-08-28 : Roberto devient l'hôte du pont (le serveur y tourne) ; IA_Life et TSA sont des
@@ -51,5 +50,9 @@ invocation via tâche planifiée Windows non testée. Trois roadmaps ont désorm
   `claude -p "/code-review <niveau>" --restricted` (lecture seule + `Bash(git:*)`, jamais
   Write/Edit) et écrit lui-même la sortie brute dans `<cible>/ROBERTO/` (jamais le process
   `claude`). `--max-budget-usd` (défaut 5 $) conservé malgré l'abonnement de l'utilisateur :
-  protège la fenêtre 5h partagée avec les autres tâches nocturnes, pas la facturation — désaccord
-  non tranché.
+  protège la fenêtre 5h partagée avec les autres tâches nocturnes, pas la facturation.
+- 2026-09-06 : `selection_projet.py` choisit le projet le plus pertinent à review (`.git`+`.claude`
+  présents, modifié <90j) parmi `Documents\ServOMorph` et `D:\ServOMorph`, suivi dans
+  `suivi_revues.json` ; commande `/revue_projet` enchaîne sélection/confirmation/revue/suivi.
+  Désaccord sur `--max-budget-usd` tranché : garde-fou de temps conservé, tout affichage/calcul de
+  coût retiré ailleurs (workflow revue_code + planificateur nocturne).

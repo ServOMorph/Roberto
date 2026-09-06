@@ -168,7 +168,6 @@ def classer_resultat(code_retour, stdout, stderr, timeout_atteint):
         "statut": "echouee",
         "raison": "inconnue",
         "detail": "",
-        "cout_usd": None,
         "duree_ms": None,
         "refus": [],
     }
@@ -185,7 +184,6 @@ def classer_resultat(code_retour, stdout, stderr, timeout_atteint):
             payload = None
 
     if payload:
-        resultat["cout_usd"] = payload.get("total_cost_usd")
         resultat["duree_ms"] = payload.get("duration_ms")
         resultat["refus"] = payload.get("permission_denials") or []
 
@@ -296,13 +294,11 @@ def appliquer_resultat(tache, resultat):
             "date": datetime.now().isoformat(timespec="seconds"),
             "raison": resultat["raison"],
             "duree_s": resultat.get("duree_s"),
-            "cout_usd": resultat.get("cout_usd"),
             "log": resultat.get("log"),
         }
     )
     tache["log"] = resultat.get("log")
     tache["duree_s"] = resultat.get("duree_s")
-    tache["cout_usd"] = resultat.get("cout_usd")
     tache["raison"] = resultat["raison"]
     tache["detail"] = resultat["detail"]
     tache["refus"] = resultat.get("refus") or []

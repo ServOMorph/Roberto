@@ -36,7 +36,12 @@ niveau max déclenché par une tâche planifiée par l'utilisateur (pas d'overla
 `<projet cible>/ROBERTO/` en langage simple priorisé par urgence, discussion vocale via
 com_telephone, correctifs exécutés la nuit suivante par le planificateur. Phase 1 [EN COURS] :
 `PLANIFICATEUR/revue_code.py` écrit et testé (18 tests + confinement vérifié en réel), invocation
-via tâche planifiée Windows non testée.
+via tâche planifiée Windows non testée. Outil complémentaire `PLANIFICATEUR/selection_projet.py` +
+commande `/revue_projet` : choisit automatiquement le projet le plus pertinent à review parmi
+`Documents\ServOMorph` et `D:\ServOMorph` (dépôt `.git`+`.claude`, modifié <90j), suivi dans
+`suivi_revues.json` — testé pour la sélection seule, jamais invoqué de bout en bout. Tout
+affichage/calcul de coût a été retiré du planificateur nocturne et du workflow revue de code ;
+`--max-budget-usd` reste un garde-fou de temps, pas un indicateur de facturation.
 
 En attente (validation réelle) : notifications téléphone verrouillé, raccordement creazik_v2,
 mise en veille depuis la PWA, première nuit du planificateur.

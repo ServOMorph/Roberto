@@ -28,12 +28,6 @@ def _duree(secondes):
     return "{} min {:02d} s".format(secondes // 60, secondes % 60)
 
 
-def _cout(valeur):
-    if valeur is None:
-        return "-"
-    return "{:.4f} $".format(valeur)
-
-
 def _fenetre_pleine_page(titre):
     fenetre = tk.Tk()
     fenetre.title(titre)
@@ -138,7 +132,6 @@ def afficher_fin(donnees, meta):
         statut = tache.get("statut")
         if statut in compteurs:
             compteurs[statut] += 1
-    cout_total = sum(t.get("cout_usd") or 0 for t in taches)
     duree_totale = (meta["fin"] - meta["debut"]).total_seconds()
 
     fenetre = _fenetre_pleine_page("Planificateur nocturne - Termine")
@@ -155,10 +148,10 @@ def afficher_fin(donnees, meta):
         fenetre,
         text=(
             "Faites {} / Outils refuses {} / Echouees {} / Reportees {} - "
-            "duree totale {} - cout total {}"
+            "duree totale {}"
         ).format(
             compteurs["faite"], compteurs["refus"], compteurs["echouee"],
-            compteurs["reportee"], _duree(duree_totale), _cout(cout_total),
+            compteurs["reportee"], _duree(duree_totale),
         ),
         bg=BG, fg=MUTED, font=("Arial", 13),
     ).pack(pady=(0, 24))
@@ -176,10 +169,9 @@ def afficher_fin(donnees, meta):
         )
         zone.insert(
             "end",
-            "  raison : {} - duree {} - cout {} - tentatives {}\n".format(
+            "  raison : {} - duree {} - tentatives {}\n".format(
                 tache.get("raison", "-"),
                 _duree(tache.get("duree_s")),
-                _cout(tache.get("cout_usd")),
                 tache.get("tentatives", 0),
             ),
             "muted",

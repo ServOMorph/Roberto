@@ -66,12 +66,6 @@ def _duree(secondes):
     return "{} min {:02d} s".format(secondes // 60, secondes % 60)
 
 
-def _cout(valeur):
-    if valeur is None:
-        return "-"
-    return "{:.4f} $".format(valeur)
-
-
 def _ligne(tache):
     statut = tache.get("statut", "en_attente")
     prompt = tache.get("prompt", "")
@@ -90,7 +84,6 @@ def _ligne(tache):
         ),
         "<td>{}</td>".format(html.escape(str(tache.get("modele", "-")))),
         "<td>{}</td>".format(_duree(tache.get("duree_s"))),
-        "<td>{}</td>".format(_cout(tache.get("cout_usd"))),
         "<td>{}</td>".format(tache.get("tentatives", 0)),
         "<td>{}</td>".format(_lien_log(tache)),
     ]
@@ -134,7 +127,6 @@ def generer(donnees, meta, dossier_sortie):
         statut = tache.get("statut")
         if statut in compteurs:
             compteurs[statut] += 1
-    cout_total = sum(t.get("cout_usd") or 0 for t in taches)
 
     cartes = [
         ("Faites", compteurs["faite"]),
@@ -154,13 +146,12 @@ def generer(donnees, meta, dossier_sortie):
         "Prompt / resultat",
         "Modele",
         "Duree",
-        "Cout",
         "Tent.",
         "Log",
     ]
     html_entetes = "".join("<th>{}</th>".format(e) for e in entetes)
     html_lignes = "".join(_ligne(t) for t in taches) or (
-        "<tr><td colspan='8' class='vide'>Aucune tache dans la file.</td></tr>"
+        "<tr><td colspan='7' class='vide'>Aucune tache dans la file.</td></tr>"
     )
 
     debut = meta["debut"]
@@ -177,7 +168,7 @@ def generer(donnees, meta, dossier_sortie):
 <div class="wrap">
   <div class="eyebrow">Planificateur nocturne</div>
   <h1>Rapport du {date}</h1>
-  <p class="lead">{total} tache(s) dans la file, cout total {cout}.</p>
+  <p class="lead">{total} tache(s) dans la file.</p>
   <div class="cards">{cartes}</div>
   <div class="meta">
     <span>Debut {debut}</span>
@@ -200,7 +191,6 @@ def generer(donnees, meta, dossier_sortie):
         css=CSS,
         date=debut.strftime("%d/%m/%Y"),
         total=len(taches),
-        cout=_cout(cout_total),
         cartes=html_cartes,
         debut=debut.strftime("%H:%M"),
         fin=fin.strftime("%H:%M"),

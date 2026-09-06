@@ -82,7 +82,7 @@ def reinitialiser(donnees, identifiant):
     for tache in cibles:
         tache["statut"] = "en_attente"
         tache["tentatives"] = 0
-        for cle in ("raison", "detail", "refus", "duree_s", "cout_usd", "log"):
+        for cle in ("raison", "detail", "refus", "duree_s", "log"):
             tache.pop(cle, None)
     return 0, "reinitialisee(s) : {}".format(", ".join(t["id"] for t in cibles))
 
