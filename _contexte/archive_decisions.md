@@ -3,6 +3,11 @@
 Décisions déplacées ici par `/close` quand la liste de `contexte.md` dépasse 10 entrées.
 
 ---
+- 2026-08-28 : Roberto devient l'hôte du pont (le serveur y tourne) ; IA_Life et TSA sont des
+  projets raccordés. `.env` d'IA_Life réutilisé tel quel (lien téléphone + push préservés).
+  Commande `/com_telephone_init` ajoutée pour les futurs déploiements.
+
+---
 - 2026-08-28 : com_telephone rendu multi-projets (routage par `project`, `projects.json`, sélecteur
   PWA) — développé et durci dans IA_Life, puis promu ici comme template unique.
 

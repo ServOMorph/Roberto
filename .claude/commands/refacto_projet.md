@@ -1,5 +1,5 @@
 ---
-description: Sélectionne un projet et prépare, dans Codex Astra, un plan complet de refactorisation avec stratégie de tests
+description: Sélectionne un projet et prépare, dans Codex Astra, un plan complet puis sa roadmap de refactorisation
 argument-hint: [chemin-projet]
 allowed-tools: Bash(python PLANIFICATEUR/selection_projet.py:*), PowerShell(python PLANIFICATEUR/selection_projet.py*), Read, Glob, Grep, Write, Bash(git status:*), Bash(git log:*), Bash(git diff:*)
 ---
@@ -10,11 +10,15 @@ allowed-tools: Bash(python PLANIFICATEUR/selection_projet.py:*), PowerShell(pyth
 
 Préparer un plan de refactorisation complet et non destructif pour un projet : comprendre son
 architecture et ses dettes techniques, relever les risques, définir les étapes de refactorisation,
-et prévoir les tests de référence avant comme les contrôles après chaque étape.
+et prévoir les tests de référence avant comme les contrôles après chaque étape. Transformer ensuite
+ce plan en roadmap exécutable, structurée en phases.
 
-Le livrable est un unique fichier
-`<projet>\ROBERTO\plan_refacto_<date>.md`. Cette commande ne modifie jamais le code applicatif,
-ne crée pas de branche et ne lance pas de refactorisation.
+Les livrables sont :
+- `<projet>\ROBERTO\plan_refacto_<date>.md` : analyse, preuves et stratégie complète ;
+- `<projet>\roadmap_refactorisation_<date>.md` : phases de réalisation dérivées du plan.
+
+Cette commande ne modifie jamais le code applicatif, ne crée pas de branche et ne lance pas de
+refactorisation.
 
 ## Précondition impérative : Codex Astra
 
@@ -80,16 +84,41 @@ procédure ci-dessous.
    - contrôles manuels indispensables et critères d'acceptation globaux ;
    - ordre d'exécution recommandé et points qui exigent une décision de l'utilisateur.
 
-6. Relire le plan pour vérifier qu'il est actionnable sans jargon inutile et qu'aucune action de
-   code n'a été réalisée. Afficher un bilan concis : chemin du plan, nombre de constats par
-   priorité, commandes de référence exécutées et éventuels blocages.
+6. Transformer le plan en `<projet>\roadmap_refactorisation_<date>.md`.
+   - Lire les `roadmap_*.md` déjà présentes à la racine de la cible afin d'éviter les doublons,
+     les phases concurrentes et les conflits de fichiers. Ne pas modifier ces roadmaps existantes.
+   - Créer une phase par chantier cohérent, dans l'ordre recommandé par le plan. Chaque phase
+     contient : objectif, périmètre de fichiers, dépendances, actions à cocher, tests avant/après,
+     critère de validation et stratégie de rollback.
+   - Reprendre les décisions nécessaires sous une section dédiée, sans les trancher à la place de
+     l'utilisateur. Les points seulement suspects restent conditionnels et ne deviennent pas des
+     travaux affirmés.
+   - Initialiser chaque phase en `[TODO]`. La création de la roadmap ne démarre aucune phase ; une
+     future session en mettra une seule à `[EN COURS]` selon les règles de la cible.
+   - Ajouter après chaque phase le checkpoint exact exigé par les instructions de la cible. En
+     l'absence de règle plus précise, utiliser :
+     ```
+     **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
+     Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmation.
+     ```
+   - Ajouter une section finale d'acceptation globale, avec les contrôles transverses et la
+     première action à effectuer. Distinguer les contrôles déjà exécutés de ceux prévus pour la
+     réalisation.
+   - Si `roadmap_refactorisation_<date>.md` existe déjà, ne pas l'écraser : s'arrêter et demander
+     un nom ou une instruction de mise à jour explicite.
+
+7. Relire le plan et la roadmap pour vérifier qu'ils sont actionnables, cohérents entre eux, sans
+   jargon inutile et qu'aucune action de code n'a été réalisée. Afficher un bilan concis : chemins
+   des deux livrables, nombre de constats par priorité, nombre de phases, commandes de référence
+   exécutées et éventuels blocages.
 
 ## Règles de sécurité
 
 - Analyse et planification seulement : pas de `Edit`, `git checkout`, création de branche,
-  installation de dépendance, migration ou formatage global. `Write` est réservé au seul plan
-  final décrit ci-dessous.
-- Le seul fichier autorisé à être créé est le plan final dans `<projet>\ROBERTO\`.
+  installation de dépendance, migration ou formatage global. `Write` est réservé aux deux
+  livrables décrits ci-dessus.
+- Les seuls fichiers autorisés à être créés sont le plan final dans `<projet>\ROBERTO\` et sa
+  roadmap à la racine de `<projet>`.
 - Un échec de test initial est une information à préserver dans le plan, jamais une correction
   implicite.
 - Toute exécution future du plan devra être une demande distincte, validée étape par étape.

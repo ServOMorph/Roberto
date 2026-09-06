@@ -1,3 +1,11 @@
+## v0.12 — 2026-09-06
+
+### Modifié
+- `.claude/commands/refacto_projet.md` : le workflow produit désormais un plan complet dans
+  `ROBERTO/`, puis une roadmap de refactorisation à la racine du projet cible, avec phases, tests,
+  checkpoints, critères de validation et rollback.
+- `_contexte/`, `README.md` : état actuel et décision structurante alignés sur ce workflow.
+
 ## v0.11 — 2026-09-06
 
 ### Ajouté

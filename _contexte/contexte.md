@@ -11,8 +11,8 @@ Roberto héberge le **bridge com_tel** (Node 5000, STT 5001, TTS 5002) et reste 
 référence des projets raccordés. Planificateur nocturne : Phase 3 [EN COURS] ; nuit réelle avec
 `typecheck` réussie, mais `audit-deps` refuse encore `Write`. Revue nocturne : Phase 1 [EN COURS],
 `revue_code.py` et la sélection automatique sont testés mais le déclenchement Windows et une revue
-de bout en bout restent à valider. `/refacto_projet` prépare désormais dans Codex/Astra un plan non
-destructif avec tests avant/après ; première exécution réelle en attente.
+de bout en bout restent à valider. `/refacto_projet` produit désormais un plan puis une roadmap
+non destructive dans Codex/Astra ; une exécution réelle a produit ces deux livrables pour TSA.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
 - 2026-08-28 : Roberto devient l'hôte du pont (le serveur y tourne) ; IA_Life et TSA sont des
@@ -49,5 +49,6 @@ destructif avec tests avant/après ; première exécution réelle en attente.
   Désaccord sur `--max-budget-usd` tranché : garde-fou de temps conservé, tout affichage/calcul de
   coût retiré ailleurs (workflow revue_code + planificateur nocturne).
 - 2026-09-06 : `/refacto_projet` sélectionne une cible ou reçoit son chemin, impose la reprise dans
-  Codex `gpt-6-astra`, puis produit uniquement un plan de refactorisation dans `ROBERTO/` avec base
-  de tests, contrôles avant/après, critères d'acceptation et rollback ; il ne modifie pas le code.
+  Codex `gpt-6-astra`, puis produit un plan dans `ROBERTO/` et une roadmap à la racine de la cible,
+  avec base de tests, contrôles avant/après, critères d'acceptation et rollback ; il ne modifie pas
+  le code.

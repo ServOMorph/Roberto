@@ -19,5 +19,6 @@ Roberto héberge le **bridge com_tel** (Node, STT et TTS) et demeure le template
 projets raccordés. Le planificateur nocturne est en Phase 3 : `typecheck` a réussi lors de la nuit
 réelle, mais `audit-deps` refuse encore l'outil `Write`. La revue nocturne est en Phase 1 ; son
 script et la sélection automatique sont testés, mais le déclenchement Windows et une revue complète
-restent à valider. `/refacto_projet` prépare désormais, dans Codex avec Astra, un plan non
-destructif de refactorisation avec tests avant/après ; sa première exécution réelle est en attente.
+restent à valider. `/refacto_projet` produit désormais, dans Codex avec Astra, un plan puis une
+roadmap non destructifs avec tests avant/après ; une exécution réelle a produit ces deux livrables
+pour TSA.

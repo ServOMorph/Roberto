@@ -67,11 +67,6 @@
   FAIT, Phases 3-5 TODO : score combiné priorité+envie, intégration dans `quotidien.md`, tests
   bout en bout) — non commitée, à reprendre dans le fil de travail normal de ce projet. réf:
   `roadmap_workflow_quotidien.md`
-- [P2|ouvert] Workflow `/refacto_projet` créé : sélection automatique (ou chemin explicite),
-  bascule obligatoire sur Codex `gpt-6-astra`, analyse non destructive, tests de référence et
-  plan unique dans `<projet>/ROBERTO/`. Jamais exécuté sur un projet réel. fait quand: la commande
-  est exécutée dans Codex/Astra sur un projet, le plan est produit et son contenu jugé exploitable.
-  réf: .claude/commands/refacto_projet.md, PLANIFICATEUR/selection_projet.py
 - [P3|ouvert] Contrôle d'intégrité de clôture indisponible : `scripts/check_kit.py`, imposé par
   `.claude/commands/close.md`, n'existe pas dans ce dépôt (commande exécutée le 2026-09-06,
   exit 1). Écart connu à corriger en Phase 1 des améliorations Roberto. fait quand: le script est
@@ -110,23 +105,22 @@
 # Session du 2026-09-06
 
 ## Décisions prises
-- `/refacto_projet` est un workflow de planification exclusivement : aucun code ne peut être
-  refactorisé pendant son exécution.
-- L'analyse doit être reprise dans Codex avec `gpt-6-astra` après sélection de la cible.
+- `/refacto_projet` produit désormais un plan détaillé puis une roadmap de refactorisation dérivée,
+  sans modifier le code applicatif.
 
 ## Livrables produits ou modifiés
-- `.claude/commands/refacto_projet.md` : créé ; sélection, analyse, tests avant/après et plan de
-  refactorisation avec rollback.
-- `_contexte/signals.md` : état de la nuit réelle corrigé (`typecheck` réussie).
+- `.claude/commands/refacto_projet.md` : étendue pour produire les deux livrables.
+- Projet `Appli_TSA_SDI_TDAH` : plan et roadmap générés lors d'une première exécution réelle.
 
 ## Hypothèses validées / invalidées
-- VALIDE : la tâche `typecheck` de la nuit a créé sa branche et a terminé avec 64/64 tests verts.
-- EN ATTENTE : `/refacto_projet` n'a pas encore été exécutée sur un projet réel dans Codex/Astra.
-- EN ATTENTE : le contrôle `python scripts/check_kit.py` est indisponible, car le script manque.
+- VALIDE : le plan et la roadmap peuvent être produits dans deux emplacements distincts (`ROBERTO/`
+  et la racine du projet cible).
+- EN ATTENTE : exécution d'une phase de la roadmap et traitement du contrôle `scripts/check_kit.py`,
+  toujours indisponible dans Roberto.
 
 ## Prochaine étape exacte
-Lancer `/refacto_projet` sans argument, passer sur Codex Astra avec le chemin proposé, puis
-évaluer le plan généré avant d'autoriser tout refactor.
+Choisir une seule roadmap active, puis lancer séparément la première phase retenue après revue du
+plan généré.
 
 ## Question bloquante pour la session suivante
 Aucune.
