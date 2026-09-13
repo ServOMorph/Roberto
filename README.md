@@ -15,10 +15,8 @@ Markdown, Python (`ollama_call.py`), templates de commandes Claude Code.
 - `PLANIFICATEUR/` : orchestrateur de tâches Claude Code nocturnes (confinées, butoir, rapport)
 
 ## État actuel
-Roberto héberge le **bridge com_tel** (Node, STT et TTS) et demeure le template de référence des
-projets raccordés. Le planificateur nocturne est en Phase 3 : `typecheck` a réussi lors de la nuit
-réelle, mais `audit-deps` refuse encore l'outil `Write`. La revue nocturne est en Phase 1 ; son
-script et la sélection automatique sont testés, mais le déclenchement Windows et une revue complète
-restent à valider. `/refacto_projet` produit désormais, dans Codex avec Astra, un plan puis une
-roadmap non destructifs avec tests avant/après ; une exécution réelle a produit ces deux livrables
-pour TSA.
+Roberto conserve le **bridge com_tel** local (Node, STT et TTS), sans projet externe raccordé ;
+Remote Control pilote désormais les environnements de codage. Le planificateur nocturne est en
+Phase 3 : `typecheck` a réussi lors de la nuit réelle, mais `audit-deps` refuse encore `Write`.
+La revue nocturne est en Phase 1 ; restent le déclenchement Windows et une revue complète.
+`/refacto_projet` produit dans Codex avec Astra un plan et une roadmap non destructifs.

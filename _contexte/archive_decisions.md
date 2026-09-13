@@ -3,6 +3,14 @@
 Décisions déplacées ici par `/close` quand la liste de `contexte.md` dépasse 10 entrées.
 
 ---
+- 2026-08-28 : Vocabulaire commun figé (`_docs/vocabulaire.md`) : com_tel, bridge, projet,
+  raccordé/autonome, canaux étanches. Termes retenus : "com_tel" (pas "Com"), "bridge" (pas "pont").
+
+---
+- 2026-08-28 : creazik_v2 raccordé au bridge ; fin de la dernière copie autonome. Tous les
+  déploiements se font désormais en mode raccordé (autonome = référence historique seulement).
+
+---
 - 2026-08-28 : Roberto devient l'hôte du pont (le serveur y tourne) ; IA_Life et TSA sont des
   projets raccordés. `.env` d'IA_Life réutilisé tel quel (lien téléphone + push préservés).
   Commande `/com_telephone_init` ajoutée pour les futurs déploiements.

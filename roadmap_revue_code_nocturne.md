@@ -5,8 +5,8 @@
 Lancer une revue de code (`/code-review` niveau max) sur un projet cible, à une heure planifiée
 par l'utilisateur (Windows ou `/schedule`, hors périmètre du code à écrire ici) ; générer une
 roadmap de correctifs priorisée par urgence, écrite en langage simple, stockée dans
-`<projet_cible>/ROBERTO/` ; discuter cette roadmap en voiture via com_telephone (validation ou
-invalidation orale) ; puis, la nuit suivante, faire exécuter les correctifs validés par le
+`<projet_cible>/ROBERTO/` ; la discuter via Remote Control (validation ou invalidation), puis la
+nuit suivante faire exécuter les correctifs validés par le
 planificateur nocturne existant (`PLANIFICATEUR/`).
 
 Créée le : 2026-09-04. Emplacement du code : à définir (probablement `Roberto/PLANIFICATEUR/`,
@@ -22,8 +22,8 @@ en réutilisant l'infrastructure existante).
 | Méthode d'analyse | `/code-review` niveau **max** (local, pas de confirmation interactive requise) |
 | Cas exclu | Niveau `ultra` : cloud, facturé, confirmation interactive requise — ne peut pas être déclenché par une tâche planifiée automatique |
 | Sortie | Un seul fichier `<projet_cible>/ROBERTO/roadmap_revue_<date>.md` |
-| Format de la sortie | Langage simple, sans jargon technique, priorisé par urgence (P1/P2/P3) — pensé pour discussion vocale en voiture |
-| Discussion | Vocale via com_telephone : lecture/discussion du fichier, validation ou invalidation par l'utilisateur |
+| Format de la sortie | Langage simple, sans jargon technique, priorisé par urgence (P1/P2/P3) |
+| Discussion | Via Remote Control : lecture/discussion du fichier, validation ou invalidation par l'utilisateur |
 | Exécution des correctifs | Nuit suivante : les points validés deviennent des tâches `queue.json` classiques, exécutées par l'orchestrateur du planificateur existant |
 | Interface de lancement | Alias `.claude/zones.md` (racine Roberto, à enrichir au besoin) ou chemin absolu direct |
 | Confinement | `claude -p "/code-review <niveau>" --restricted` (lecture seule + `Bash(git:*)`, jamais Write/Edit) ; la sortie brute est écrite par le script Python lui-même dans `<cible>/ROBERTO/`, jamais par le process `claude` |
@@ -68,10 +68,10 @@ Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmati
 
 ---
 
-## Phase 3 — Intégration com_telephone [TODO]
+## Phase 3 — Validation via Remote Control [TODO]
 
-- [ ] Le fichier de roadmap de review devient consultable/discutable en voix
-- [ ] Mécanisme de validation/invalidation orale des points par l'utilisateur
+- [ ] Le fichier de roadmap de review devient consultable et discutable via Remote Control
+- [ ] Mécanisme de validation/invalidation des points par l'utilisateur
 - [ ] Tests
 
 **⏸ Checkpoint** — Demander à l'utilisateur de faire `/compact` avant de continuer.
@@ -93,7 +93,7 @@ Attendre sa réponse écrite. Ne pas commencer la phase suivante sans confirmati
   `queue.json`) : les deux roadmaps peuvent se retrouver actives en même temps — arbitrage déjà
   signalé comme ouvert dans `signals.md` (P2), explicitement reporté par l'utilisateur le
   2026-09-04.
-- Fichier de sortie unique servant à la fois de spec technique (Phase 4) et de support vocal
+- Fichier de sortie unique servant à la fois de spec technique (Phase 4) et de support de discussion
   (Phase 3) : risque de compromis si les deux usages tirent le format dans des directions
   différentes.
 - `/code-review` niveau max lancé sans surveillance : confinement vérifié en réel sur Roberto

@@ -7,21 +7,13 @@ Copie réorganisée de claude-vibecoding-kit, réalisée étape par étape.
 Markdown, Python (ollama_call.py), templates de commandes Claude Code
 
 ## État actuel (réécrit intégralement à chaque /close)
-Roberto héberge le **bridge com_tel** (Node 5000, STT 5001, TTS 5002) et reste le template de
-référence des projets raccordés. Planificateur nocturne : Phase 3 [EN COURS] ; nuit réelle avec
-`typecheck` réussie, mais `audit-deps` refuse encore `Write`. Revue nocturne : Phase 1 [EN COURS],
-`revue_code.py` et la sélection automatique sont testés mais le déclenchement Windows et une revue
-de bout en bout restent à valider. `/refacto_projet` produit désormais un plan puis une roadmap
-non destructive dans Codex/Astra ; une exécution réelle a produit ces deux livrables pour TSA.
+Roberto conserve son **bridge com_tel** local (Node 5000, STT 5001, TTS 5002), sans projet externe
+raccordé : le pilotage distant des environnements passe désormais par Remote Control. Planificateur
+nocturne : Phase 3 [EN COURS], `typecheck` a réussi mais `audit-deps` refuse encore `Write`. Revue
+nocturne : Phase 1 [EN COURS], scripts testés ; restent le déclenchement Windows et une revue de
+bout en bout. `/refacto_projet` génère un plan et une roadmap non destructifs dans Codex/Astra.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-28 : Roberto devient l'hôte du pont (le serveur y tourne) ; IA_Life et TSA sont des
-  projets raccordés. `.env` d'IA_Life réutilisé tel quel (lien téléphone + push préservés).
-  Commande `/com_telephone_init` ajoutée pour les futurs déploiements.
-- 2026-08-28 : Vocabulaire commun figé (`_docs/vocabulaire.md`) : com_tel, bridge, projet,
-  raccordé/autonome, canaux étanches. Termes retenus : "com_tel" (pas "Com"), "bridge" (pas "pont").
-- 2026-08-28 : creazik_v2 raccordé au bridge ; fin de la dernière copie autonome. Tous les
-  déploiements se font désormais en mode raccordé (autonome = référence historique seulement).
 - 2026-08-28 : Audit sécurité (`_docs/audit_securite_2026-08-28.md`). Corrigés : `/send` et
   `/push/test` refusent les requêtes proxifiées (S1), nettoyage `\r\n\t` des textes journalisés
   (S2), extension image assainie + limites de taille + maxPayload WS (S3/S6).
@@ -52,3 +44,6 @@ non destructive dans Codex/Astra ; une exécution réelle a produit ces deux liv
   Codex `gpt-6-astra`, puis produit un plan dans `ROBERTO/` et une roadmap à la racine de la cible,
   avec base de tests, contrôles avant/après, critères d'acceptation et rollback ; il ne modifie pas
   le code.
+- 2026-09-13 : `com_telephone` est conservé uniquement dans Roberto ; les raccordements IA_Life,
+  TSA et creazik_v2 sont retirés, Remote Control assurant désormais le pilotage distant des
+  environnements de codage.

@@ -17,7 +17,4 @@ surveillance (`/roberto`), et une entrée dans `projects.json` du pont hôte. Vo
 
 | Version | Projet | Chemin | Type | Date |
 |---------|--------|--------|------|------|
-| v0.4 | creazik_v2 | D:\ServOMorph\creazik_v2\ROBERTO\com_telephone | raccordé au pont Roberto (copie autonome retirée) | 2026-08-28 |
 | v0.4 | Roberto | D:\ServOMorph\Roberto\com_telephone | pont hôte + template + raccordé (onglet `Roberto`) | 2026-08-28 |
-| v0.4 | IA_Life | D:\ServOMorph\IA_Life\ROBERTO\com_telephone | raccordé au pont Roberto | 2026-08-28 |
-| v0.4 | Appli_TSA_SDI_TDAH | D:\ServOMorph\Appli_TSA_SDI_TDAH\ROBERTO\com_telephone | raccordé au pont Roberto | 2026-08-27 |

@@ -1,3 +1,10 @@
+## v0.13 — 2026-09-13
+
+### Modifié
+- `com_telephone` reste local à Roberto : les trois projets externes ont été retirés du registre
+  du bridge, et la revue nocturne utilise désormais Remote Control pour la discussion.
+- Contexte, README et roadmap alignés sur cette nouvelle portée.
+
 ## v0.12 — 2026-09-06
 
 ### Modifié

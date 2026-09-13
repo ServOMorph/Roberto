@@ -2,6 +2,8 @@
 
 > Migration structurelle. CLAUDE.md recommande **Opus** pour cette roadmap.
 > Rédigée le 2026-08-28 depuis la session IA_Life (pilotage téléphone via le bridge).
+> État au 2026-09-13 : bridge conservé dans Roberto uniquement ; raccordements IA_Life, TSA et
+> creazik_v2 retirés au profit de Remote Control pour le pilotage des environnements de codage.
 
 ## Objectif
 

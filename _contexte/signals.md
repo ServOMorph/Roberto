@@ -67,6 +67,10 @@
   FAIT, Phases 3-5 TODO : score combiné priorité+envie, intégration dans `quotidien.md`, tests
   bout en bout) — non commitée, à reprendre dans le fil de travail normal de ce projet. réf:
   `roadmap_workflow_quotidien.md`
+- [P2|ouvert] Aligner `roadmap_ameliorations.md` sur le bridge désormais local à Roberto : son
+  scénario de test bout en bout mentionne encore IA_Life, qui n'est plus raccordé. fait quand: le
+  scénario cible exclusivement la PWA locale et la roadmap est intégrée dans un commit dédié. réf:
+  `roadmap_ameliorations.md`, com_telephone/voice-code-bridge/server/projects.json
 - [P3|ouvert] Contrôle d'intégrité de clôture indisponible : `scripts/check_kit.py`, imposé par
   `.claude/commands/close.md`, n'existe pas dans ce dépôt (commande exécutée le 2026-09-06,
   exit 1). Écart connu à corriger en Phase 1 des améliorations Roberto. fait quand: le script est
@@ -76,17 +80,10 @@
   de la PWA. fait quand: l'utilisateur confirme réception fiable sur écran verrouillé (5 envois
   sur 5) et aucun doublon. réf: tests_manuels.md, com_telephone/voice-code-bridge/server/server.js
   (broadcastAndNotify, anyClientForeground), mobile/app.js (client.visible, seenMids, deviceId)
-- [P2|ouvert] Valider le raccordement creazik_v2 de bout en bout. fait quand: une session Claude
-  Code dans creazik_v2 lance /roberto et un aller-retour vocal fonctionne sur l'onglet PWA
-  `creazik_v2`. réf: creazik_v2/ROBERTO/com_telephone/README.md,
-  creazik_v2/.claude/commands/roberto.md
 - [P2|ouvert] Décider S4 de l'audit : le TTS passe par edge_tts (cloud Microsoft) en premier,
   Piper en secours ; le README affirme l'inverse. fait quand: décision actée + code et README
   alignés (Piper par défaut, ou README corrigé). réf: com_telephone/_docs/audit_securite_2026-08-28.md
   (S4), com_telephone/voice-code-bridge/server/tts_server.py
-- [P3|ouvert] Décider la voie pour l'accès externe de Marie au projet `tsa` (multi-utilisateurs
-  dans le bridge, ou second bridge dédié). fait quand: voie choisie + 4 questions du doc tranchées.
-  réf: com_telephone/_docs/analyse_acces_externe_marie_tsa.md
 - [P3|ouvert] Traiter S5, S7, S8 de l'audit (check anti-traversée statique sans séparateur ;
   cycle de vie du token : cookie 1 an, token imprimé par com_manager, rotation non documentée ;
   divers, dont `client.sleep` à réserver au super-jeton). fait quand: chaque constat corrigé ou
@@ -102,25 +99,23 @@
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-09-06
+# Session du 2026-09-13
 
 ## Décisions prises
-- `/refacto_projet` produit désormais un plan détaillé puis une roadmap de refactorisation dérivée,
-  sans modifier le code applicatif.
+- Le bridge `com_telephone` reste hébergé dans Roberto, mais les raccordements IA_Life, TSA et
+  creazik_v2 sont retirés ; Remote Control remplace leur pilotage distant de Codex/Claude Code.
 
 ## Livrables produits ou modifiés
-- `.claude/commands/refacto_projet.md` : étendue pour produire les deux livrables.
-- Projet `Appli_TSA_SDI_TDAH` : plan et roadmap générés lors d'une première exécution réelle.
+- `com_telephone/voice-code-bridge/server/projects.json` et `DEPLOYMENTS.md` : registre limité à
+  Roberto.
+- `roadmap_revue_code_nocturne.md`, `README.md`, `_contexte/` : état et suite de la revue alignés.
 
 ## Hypothèses validées / invalidées
-- VALIDE : le plan et la roadmap peuvent être produits dans deux emplacements distincts (`ROBERTO/`
-  et la racine du projet cible).
-- EN ATTENTE : exécution d'une phase de la roadmap et traitement du contrôle `scripts/check_kit.py`,
-  toujours indisponible dans Roberto.
+- VALIDE : aucun projet externe ne reste inscrit dans le registre du bridge Roberto.
+- EN ATTENTE : le contrôle `scripts/check_kit.py` reste indisponible dans Roberto.
 
 ## Prochaine étape exacte
-Choisir une seule roadmap active, puis lancer séparément la première phase retenue après revue du
-plan généré.
+Choisir une seule roadmap active, puis lancer séparément sa première phase retenue.
 
 ## Question bloquante pour la session suivante
 Aucune.
