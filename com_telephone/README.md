@@ -76,11 +76,17 @@ Si `projects.json` est perdu, recréer l'entrée :
 ```
 
 **Lancement à chaque fois**
-1. Lancer le tunnel soi-même (Claude ne le lance jamais).
-2. Dans la session Roberto : `/roberto`. Elle démarre le pont si besoin et donne le lien appli.
-3. Dans la session VibeObs : `/relais_telephone`. Elle met VibeObs à l'écoute de
-   `logs/messages_vibeobs.log` et applique les règles du relais.
-4. Sur le téléphone : ouvrir l'appli et sélectionner l'onglet VibeObs.
+1. Tunnel : lancé par vous (aucune session ne le lance).
+2. Session Roberto : `/roberto` (pont démarré, Roberto à l'écoute).
+3. Session VibeObs : `/relais_telephone` (VibeObs à l'écoute de son onglet).
+4. Dans chaque session à joindre en voiture : `/telephone roberto`, puis choisir son mode
+   d'autorisation avant de partir. Les demandes d'autorisation du logiciel ne se valident qu'au PC.
+   Une session déjà arrêtée sur une question ou une autorisation doit d'abord recevoir votre réponse.
+5. Téléphone : ouvrir l'appli, onglet VibeObs, dire « point » pour vérifier que le relais répond.
+6. Retour au PC : `/telephone off` dans chaque session passée en mode roberto, et
+   `/relais_telephone stop` dans VibeObs.
+7. Après un redémarrage du PC : tout est perdu (pont, écoutes, sessions) et se relance à la main
+   depuis l'étape 1.
 
 **Dépannage**
 - Rien ne répond : relancer `/roberto`, puis `/relais_telephone`.
