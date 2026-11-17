@@ -1,4 +1,4 @@
-# Signals — roberto   (MAJ 2026-09-05)
+# Signals — roberto   (MAJ 2026-11-17)
 
 ## Actions ouvertes
 - [P1|ouvert] Nuit réelle du planificateur (déclenchée le 2026-09-04 à 21h00) : tâche `audit-deps`
@@ -96,26 +96,45 @@
   3 correctifs (`routes_orga.py`) sans aucun suivi de zone. fait quand: décision actée (zone créée
   et `/start` fonctionnel dessus, ou traitement ad hoc confirmé durablement). réf: session du
   2026-09-05, `.claude/zones.md`
+- [P2|ouvert] Relais entre sessions Claude locales via Roberto (`ListAgents` + `SendMessage`) :
+  test concluant avec VibeObs `c371ea` (envoi, réponse, relais de sa question à l'utilisateur,
+  retour de la réponse). Non établi : lire la question en attente d'une session sans lui écrire.
+  Non fait : les 7 autres sessions locales, et une roadmap dédiée (travail multi-phases proposé à
+  l'utilisateur, sans réponse). fait quand: décision prise sur la roadmap (créée ou écartée) et
+  relais validé sur au moins 2 autres sessions. réf: `_contexte/memory.md`,
+  `com_telephone/README.md`
+- [P2|ouvert] Accents perdus dans les messages envoyés au téléphone : `curl` sous Windows
+  convertit les arguments en page de codes locale, le serveur reçoit du non-UTF-8 (U+FFFD constaté
+  dans `messages_roberto.log`). Contourné par `com_telephone/_commands/send_message.py` (UTF-8),
+  validé à l'oreille par l'utilisateur le 2026-11-17. Reste : l'exemple `curl` du README
+  com_telephone, la commande `/roberto` à contrôler, `send_message.py` non commité, règle non
+  mémorisée ; hypothèse non vérifiée : les autres sessions répondant via `curl` ont le même défaut.
+  fait quand: README et `/roberto` pointent vers `send_message.py`, le script est commité, la règle
+  est inscrite en mémoire. réf: `com_telephone/_commands/send_message.py`,
+  `com_telephone/README.md`, `.claude/commands/roberto.md`
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-09-13
+# Session du 2026-11-17
 
 ## Décisions prises
-- Le bridge `com_telephone` reste hébergé dans Roberto, mais les raccordements IA_Life, TSA et
-  creazik_v2 sont retirés ; Remote Control remplace leur pilotage distant de Codex/Claude Code.
+- Un message de l'utilisateur reçu du téléphone vaut confirmation, y compris pour répondre aux
+  autres sessions Claude locales ; garde-fou : confirmation explicite redemandée pour une action
+  destructive ou irréversible (inscrit dans `_contexte/memory.md`).
+- Les messages vers le téléphone passent par `send_message.py` (UTF-8), plus par `curl`.
 
 ## Livrables produits ou modifiés
-- `com_telephone/voice-code-bridge/server/projects.json` et `DEPLOYMENTS.md` : registre limité à
-  Roberto.
-- `roadmap_revue_code_nocturne.md`, `README.md`, `_contexte/` : état et suite de la revue alignés.
+- `_contexte/memory.md` : créé (règle de confirmation par le téléphone).
+- Bridge relancé (STT, TTS, Node sur le port 5000) ; Monitor de `messages_roberto.log` relancé.
+- `_contexte/signals.md`, `contexte.md`, `README.md` : alignés.
 
 ## Hypothèses validées / invalidées
-- VALIDE : aucun projet externe ne reste inscrit dans le registre du bridge Roberto.
-- EN ATTENTE : le contrôle `scripts/check_kit.py` reste indisponible dans Roberto.
+- VALIDE : relais Roberto vers VibeObs `c371ea` via `ListAgents`/`SendMessage`, dans les deux sens.
+- INVALIDE : le TTS ne gère pas les accents -> la cause était l'envoi par `curl` (non-UTF-8).
+- EN ATTENTE : lecture d'une question en attente sans écrire ; relais sur les autres sessions.
 
 ## Prochaine étape exacte
-Choisir une seule roadmap active, puis lancer séparément sa première phase retenue.
+Arbitrer les 3 roadmaps `[EN COURS]` (P1), puis décider si le relais entre sessions a sa roadmap.
 
 ## Question bloquante pour la session suivante
-Aucune.
+Le relais entre sessions doit-il avoir sa propre roadmap (proposé, sans réponse) ?

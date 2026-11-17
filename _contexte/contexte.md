@@ -8,10 +8,10 @@ Markdown, Python (ollama_call.py), templates de commandes Claude Code
 
 ## État actuel (réécrit intégralement à chaque /close)
 Roberto conserve son **bridge com_tel** local (Node 5000, STT 5001, TTS 5002), sans projet externe
-raccordé : le pilotage distant des environnements passe désormais par Remote Control. Planificateur
-nocturne : Phase 3 [EN COURS], `typecheck` a réussi mais `audit-deps` refuse encore `Write`. Revue
-nocturne : Phase 1 [EN COURS], scripts testés ; restent le déclenchement Windows et une revue de
-bout en bout. `/refacto_projet` génère un plan et une roadmap non destructifs dans Codex/Astra.
+raccordé. Relais vers les autres sessions Claude locales (`ListAgents`/`SendMessage`) testé avec
+VibeObs, étendu à aucune autre ; envoi vers le téléphone via `send_message.py` (UTF-8). Planificateur
+nocturne : Phase 3 [EN COURS], `audit-deps` refuse encore `Write`. Revue nocturne : Phase 1
+[EN COURS]. `/refacto_projet` génère un plan et une roadmap non destructifs dans Codex/Astra.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
 - 2026-08-28 : Audit sécurité (`_docs/audit_securite_2026-08-28.md`). Corrigés : `/send` et
@@ -47,3 +47,7 @@ bout en bout. `/refacto_projet` génère un plan et une roadmap non destructifs 
 - 2026-09-13 : `com_telephone` est conservé uniquement dans Roberto ; les raccordements IA_Life,
   TSA et creazik_v2 sont retirés, Remote Control assurant désormais le pilotage distant des
   environnements de codage.
+- 2026-11-17 : Un message reçu du téléphone vaut confirmation de l'utilisateur, y compris pour
+  répondre aux autres sessions Claude locales (`SendMessage`) ; action destructive ou irréversible :
+  confirmation explicite redemandée. Envoi vers le téléphone via `send_message.py` : `curl` sous
+  Windows corrompt les accents (le TTS n'est pas en cause). Détail : `_contexte/memory.md`.
