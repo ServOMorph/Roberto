@@ -59,6 +59,34 @@ installer `com_telephone` dans un autre projet, depuis une session Claude Code d
 Détail de la procédure : `.claude/commands/com_telephone_init.md`. Registre des déploiements :
 `DEPLOYMENTS.md`.
 
+## Relais des sessions par VibeObs — initialisation
+
+**Rôle.** VibeObs écoute son onglet dans l'appli, résume les sessions Claude Code en attente et leur
+transmet mot pour mot les réponses dictées par l'utilisateur. Il ne décide jamais seul (cas 3 du
+registre `prises_de_controle.md` de VibeObs, dans `D:\ServOMorph\VibeObs\DOCUMENTATION\30_decisions\`).
+
+**Prérequis uniques** (faits le 2026-11-17) :
+- entrée `vibeobs` dans `voice-code-bridge/server/projects.json` ;
+- ligne VibeObs dans `DEPLOYMENTS.md`.
+
+Si `projects.json` est perdu, recréer l'entrée :
+```
+{"id": "vibeobs", "label": "VibeObs", "racine": "D:/ServOMorph/VibeObs",
+ "log": "logs/messages_vibeobs.log", "captures": "D:/ServOMorph/VibeObs/_docs/captures"}
+```
+
+**Lancement à chaque fois**
+1. Lancer le tunnel soi-même (Claude ne le lance jamais).
+2. Dans la session Roberto : `/roberto`. Elle démarre le pont si besoin et donne le lien appli.
+3. Dans la session VibeObs : `/relais_telephone`. Elle met VibeObs à l'écoute de
+   `logs/messages_vibeobs.log` et applique les règles du relais.
+4. Sur le téléphone : ouvrir l'appli et sélectionner l'onglet VibeObs.
+
+**Dépannage**
+- Rien ne répond : relancer `/roberto`, puis `/relais_telephone`.
+- Onglet VibeObs absent : vérifier l'entrée dans `projects.json`, puis
+  `py -3.11 _commands/com_manager.py restart node`.
+
 ## Règle absolue : deux canaux distincts
 La conversation Claude Code (terminal/IDE) et l'appli téléphone sont deux canaux séparés. Répondre
 dans l'un ne transmet rien à l'autre. Dès qu'un message vient du log de messages (donc du

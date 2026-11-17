@@ -18,3 +18,4 @@ surveillance (`/roberto`), et une entrée dans `projects.json` du pont hôte. Vo
 | Version | Projet | Chemin | Type | Date |
 |---------|--------|--------|------|------|
 | v0.4 | Roberto | D:\ServOMorph\Roberto\com_telephone | pont hôte + template + raccordé (onglet `Roberto`) | 2026-08-28 |
+| v0.4 | VibeObs | D:\ServOMorph\VibeObs | raccordé au pont Roberto (relais des sessions, commande /relais_telephone côté VibeObs) | 2026-11-17 |

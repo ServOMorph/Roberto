@@ -10,10 +10,11 @@ model: haiku
 
 Roberto héberge le pont `com_telephone` et en est aussi un projet raccordé : l'onglet `Roberto`
 de la PWA parle à une session Claude Code ouverte dans ce projet. Cette commande met (ou remet)
-la session en écoute du log de messages propre à Roberto, sans redémarrer le serveur.
+la session en écoute du log de messages propre à Roberto. Si le pont est arrêté, la commande le
+démarre elle-même (étape 1).
 
-Ne pas confondre avec `com_manager.py` (démarre/arrête les 3 process du pont) : ici on ne touche
-qu'au Monitor.
+Le tunnel n'est jamais lancé par Claude : c'est l'utilisateur qui le lance. Ne pas le démarrer,
+ne pas proposer de le démarrer à sa place.
 
 ## Constantes
 
@@ -28,7 +29,22 @@ qu'au Monitor.
    ```
    py -3.11 "D:\ServOMorph\Roberto\com_telephone\_commands\com_manager.py" status
    ```
-   Si un process est `[KO]`, le signaler : lancer `com_manager.py start`. Continuer quand même.
+   Si un process est `[KO]`, démarrer le pont sans demander de validation :
+   1. Libérer le port 5000 (voir `com_telephone/_commands/com_manager.md`, étape 2) :
+      ```
+      netstat -ano | findstr :5000
+      ```
+      Si une ligne `LISTENING` donne un PID, contrôler son nom avec
+      `tasklist /FI "PID eq <pid>"`. Si c'est `node.exe`, l'arrêter avec
+      `taskkill /F /T /PID <pid>`. Si c'est un autre programme, ne pas le tuer : le signaler à
+      l'utilisateur et s'arrêter.
+   2. Lancer :
+      ```
+      py -3.11 "D:\ServOMorph\Roberto\com_telephone\_commands\com_manager.py" start
+      ```
+   3. Relancer `status`, puis donner à l'utilisateur la ligne `Lien appli : ...` affichée par
+      `start` (10 à 20 secondes de chargement des modèles avant que le serveur soit utilisable).
+   Le tunnel reste à lancer par l'utilisateur.
 
 2. Se fier au fichier de verrou, jamais à la mémoire de la conversation :
    1. Si `monitor_roberto.lock` existe, lire le `task_id` et appeler `TaskStop` dessus (échec
