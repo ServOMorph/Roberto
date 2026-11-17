@@ -7,11 +7,11 @@ Copie réorganisée de claude-vibecoding-kit, réalisée étape par étape.
 Markdown, Python (ollama_call.py), templates de commandes Claude Code
 
 ## État actuel (réécrit intégralement à chaque /close)
-Roberto conserve son **bridge com_tel** local (Node 5000, STT 5001, TTS 5002), sans projet externe
-raccordé. Relais vers les autres sessions Claude locales (`ListAgents`/`SendMessage`) testé avec
-VibeObs, étendu à aucune autre ; envoi vers le téléphone via `send_message.py` (UTF-8). Planificateur
-nocturne : Phase 3 [EN COURS], `audit-deps` refuse encore `Write`. Revue nocturne : Phase 1
-[EN COURS]. `/refacto_projet` génère un plan et une roadmap non destructifs dans Codex/Astra.
+Roberto conserve son **bridge com_tel** (Node 5000, STT 5001, TTS 5002), raccordé à VibeObs (non
+validé en réel) ; `/roberto` démarre le pont, le tunnel reste lancé par l'utilisateur. Relais vers
+les sessions Claude locales (`ListAgents`/`SendMessage`) testé avec VibeObs, suite pilotée depuis sa
+session ; envoi vers le téléphone via `send_message.py`. Planificateur nocturne : Phase 3 ; revue
+nocturne : Phase 1 ; `/refacto_projet` : plan et roadmap non destructifs dans Codex/Astra.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
 - 2026-08-28 : Audit sécurité (`_docs/audit_securite_2026-08-28.md`). Corrigés : `/send` et
@@ -51,3 +51,7 @@ nocturne : Phase 3 [EN COURS], `audit-deps` refuse encore `Write`. Revue nocturn
   répondre aux autres sessions Claude locales (`SendMessage`) ; action destructive ou irréversible :
   confirmation explicite redemandée. Envoi vers le téléphone via `send_message.py` : `curl` sous
   Windows corrompt les accents (le TTS n'est pas en cause). Détail : `_contexte/memory.md`.
+- 2026-11-17 : VibeObs est raccordé au pont com_telephone (entrée `vibeobs`, ligne dans
+  `DEPLOYMENTS.md`), ce qui revient en partie sur l'entrée du 2026-09-13 ; `/roberto` démarre le pont
+  si besoin (port 5000 libéré seulement si `node.exe`). Le tunnel est lancé par l'utilisateur seul,
+  jamais par Claude. Procédure : `com_telephone/README.md`, section « Relais des sessions par VibeObs ».

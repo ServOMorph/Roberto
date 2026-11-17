@@ -96,19 +96,29 @@
   3 correctifs (`routes_orga.py`) sans aucun suivi de zone. fait quand: décision actée (zone créée
   et `/start` fonctionnel dessus, ou traitement ad hoc confirmé durablement). réf: session du
   2026-09-05, `.claude/zones.md`
-- [P2|ouvert] Relais entre sessions Claude locales via Roberto (`ListAgents` + `SendMessage`) :
-  test concluant avec VibeObs `c371ea` (envoi, réponse, relais de sa question à l'utilisateur,
-  retour de la réponse). Non établi : lire la question en attente d'une session sans lui écrire.
-  Non fait : les 7 autres sessions locales, et une roadmap dédiée (travail multi-phases proposé à
-  l'utilisateur, sans réponse). fait quand: décision prise sur la roadmap (créée ou écartée) et
-  relais validé sur au moins 2 autres sessions. réf: `_contexte/memory.md`,
-  `com_telephone/README.md`
+- [P2|ouvert] Relais entre sessions Claude locales : l'utilisateur poursuit le chantier dans la
+  session VibeObs (`c371ea`), qui tient Roberto informé. Établi : relais Roberto-VibeObs via
+  `ListAgents`/`SendMessage` testé dans les deux sens. Avis de VibeObs, non tranché formellement :
+  VibeObs recueille et trie, Roberto reste l'interface vocale ; préalables cités : file persistante
+  sur disque, nouveau cas de droits au registre des prises de contrôle de VibeObs. Non établi :
+  lire l'écran d'une session. fait quand: architecture actée par l'utilisateur et un test sans
+  risque (2 sessions inactives interrogées, une synthèse relue en voiture) réussi. réf:
+  `_contexte/memory.md`, `D:\ServOMorph\VibeObs\DOCUMENTATION\30_decisions\prises_de_controle.md`
+- [P2|ouvert] Valider en réel le raccordement de VibeObs au pont (commit `df08ff1`, non poussé) :
+  l'entrée `vibeobs` de `projects.json` (ignoré par git, à recréer si perdu) n'a jamais été lue par
+  un pont démarré ; le démarrage automatique de `/roberto` (port 5000 libéré seulement si
+  `node.exe`) n'a jamais été exécuté. Le tunnel est toujours lancé par l'utilisateur, jamais par
+  Claude. Revient en partie sur la décision du 2026-09-13. fait quand: pont démarré via `/roberto`,
+  onglet VibeObs visible dans l'appli, aller-retour avec la session VibeObs réussi, puis push
+  décidé. réf: `.claude/commands/roberto.md`, `com_telephone/README.md`,
+  `com_telephone/DEPLOYMENTS.md`
 - [P2|ouvert] Accents perdus dans les messages envoyés au téléphone : `curl` sous Windows
   convertit les arguments en page de codes locale, le serveur reçoit du non-UTF-8 (U+FFFD constaté
   dans `messages_roberto.log`). Contourné par `com_telephone/_commands/send_message.py` (UTF-8),
   validé à l'oreille par l'utilisateur le 2026-11-17. Reste : l'exemple `curl` du README
-  com_telephone, la commande `/roberto` à contrôler, `send_message.py` non commité, règle non
-  mémorisée ; hypothèse non vérifiée : les autres sessions répondant via `curl` ont le même défaut.
+  com_telephone, `send_message.py` non commité, règle non mémorisée (`/roberto` relu : aucun
+  exemple `curl`) ; hypothèse non vérifiée : les autres sessions répondant via `curl` ont le même
+  défaut.
   fait quand: README et `/roberto` pointent vers `send_message.py`, le script est commité, la règle
   est inscrite en mémoire. réf: `com_telephone/_commands/send_message.py`,
   `com_telephone/README.md`, `.claude/commands/roberto.md`
@@ -118,23 +128,26 @@
 # Session du 2026-11-17
 
 ## Décisions prises
-- Un message de l'utilisateur reçu du téléphone vaut confirmation, y compris pour répondre aux
-  autres sessions Claude locales ; garde-fou : confirmation explicite redemandée pour une action
-  destructive ou irréversible (inscrit dans `_contexte/memory.md`).
-- Les messages vers le téléphone passent par `send_message.py` (UTF-8), plus par `curl`.
+- Un message de l'utilisateur reçu du téléphone vaut confirmation (garde-fou : action destructive ou
+  irréversible), inscrit dans `_contexte/memory.md` ; envois vers le téléphone via `send_message.py`.
+- VibeObs est raccordé au pont com_telephone ; `/roberto` démarre le pont si besoin ; le tunnel est
+  lancé par l'utilisateur seul, jamais par Claude.
+- L'utilisateur poursuit le chantier de relais entre sessions dans la session VibeObs.
 
 ## Livrables produits ou modifiés
-- `_contexte/memory.md` : créé (règle de confirmation par le téléphone).
-- Bridge relancé (STT, TTS, Node sur le port 5000) ; Monitor de `messages_roberto.log` relancé.
-- `_contexte/signals.md`, `contexte.md`, `README.md` : alignés.
+- `_contexte/memory.md` : créé ; `.claude/commands/roberto.md`, `com_telephone/DEPLOYMENTS.md`,
+  `com_telephone/README.md` : modifiés (commit `df08ff1`, non poussé) ; `projects.json` : entrée
+  `vibeobs` (ignoré par git).
+- Bridge arrêté, Monitors arrêtés et verrous supprimés en fin de session.
 
 ## Hypothèses validées / invalidées
-- VALIDE : relais Roberto vers VibeObs `c371ea` via `ListAgents`/`SendMessage`, dans les deux sens.
-- INVALIDE : le TTS ne gère pas les accents -> la cause était l'envoi par `curl` (non-UTF-8).
-- EN ATTENTE : lecture d'une question en attente sans écrire ; relais sur les autres sessions.
+- VALIDE : relais Roberto-VibeObs via `ListAgents`/`SendMessage`, dans les deux sens.
+- INVALIDE : le TTS ne gère pas les accents -> cause : envoi par `curl` (non-UTF-8).
+- EN ATTENTE : raccordement VibeObs jamais exécuté sur un pont démarré ; architecture non actée.
 
 ## Prochaine étape exacte
-Arbitrer les 3 roadmaps `[EN COURS]` (P1), puis décider si le relais entre sessions a sa roadmap.
+Arbitrer les 3 roadmaps `[EN COURS]` (P1), puis valider en réel le raccordement VibeObs (pont via
+`/roberto`, tunnel lancé par l'utilisateur).
 
 ## Question bloquante pour la session suivante
-Le relais entre sessions doit-il avoir sa propre roadmap (proposé, sans réponse) ?
+Quelle architecture l'utilisateur retient-il pour le relais (VibeObs gère, Roberto relaie) ?

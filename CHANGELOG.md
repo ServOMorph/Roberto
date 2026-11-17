@@ -1,3 +1,10 @@
+## v0.14 — 2026-11-17
+
+### Modifié
+- `.claude/commands/roberto.md` : démarre le pont si un process est KO (port 5000 libéré seulement si `node.exe`) ; le tunnel reste lancé par l'utilisateur.
+- `com_telephone/DEPLOYMENTS.md`, `com_telephone/README.md` : VibeObs raccordé au pont, section d'initialisation du relais.
+- `_contexte/memory.md` : règle de confirmation par message téléphone ; décisions et état alignés.
+
 ## v0.13 — 2026-09-13
 
 ### Modifié

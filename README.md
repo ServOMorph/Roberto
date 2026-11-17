@@ -15,7 +15,7 @@ Markdown, Python (`ollama_call.py`), templates de commandes Claude Code.
 - `PLANIFICATEUR/` : orchestrateur de tâches Claude Code nocturnes (confinées, butoir, rapport)
 
 ## État actuel
-Roberto conserve le **bridge com_tel** local (Node, STT et TTS), sans projet externe raccordé ;
+Roberto conserve le **bridge com_tel** (Node, STT et TTS), raccordé à VibeObs (non validé en réel) ;
 Remote Control pilote désormais les environnements de codage. Un relais vers les autres sessions
 Claude locales (`ListAgents`/`SendMessage`) est testé avec une session ; les envois vers le
 téléphone passent par `send_message.py` (UTF-8). Le planificateur nocturne est en
