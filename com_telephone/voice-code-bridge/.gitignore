@@ -7,3 +7,4 @@ server/.env
 *.wav
 
 server/push_subs.json
+server/known_devices.json

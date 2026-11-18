@@ -56,6 +56,49 @@ if (!AUTH_TOKEN) {
   process.exit(1);
 }
 
+const BIND_HOST = process.env.BIND_HOST || "127.0.0.1";
+const ALLOW_REMOTE_SLEEP = process.env.ALLOW_REMOTE_SLEEP === "1";
+const BANG_ALLOWLIST = (process.env.BANG_ALLOWLIST || "close,start")
+  .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+const MAX_WS_CLIENTS = 5;
+const MAX_JSON_BODY = 64 * 1024;
+const MAX_AUDIO_BODY = 10 * 1024 * 1024;
+
+const rateBuckets = new Map();
+function allowRate(key, limit, windowMs) {
+  const now = Date.now();
+  const bucket = rateBuckets.get(key) || [];
+  while (bucket.length && now - bucket[0] > windowMs) bucket.shift();
+  if (bucket.length >= limit) {
+    rateBuckets.set(key, bucket);
+    return false;
+  }
+  bucket.push(now);
+  rateBuckets.set(key, bucket);
+  return true;
+}
+
+function readBody(req, res, max, onDone) {
+  const chunks = [];
+  let size = 0;
+  let aborted = false;
+  req.on("data", (chunk) => {
+    if (aborted) return;
+    size += chunk.length;
+    if (size > max) {
+      aborted = true;
+      res.writeHead(413);
+      res.end("Trop volumineux");
+      req.destroy();
+      return;
+    }
+    chunks.push(chunk);
+  });
+  req.on("end", () => {
+    if (!aborted) onDone(Buffer.concat(chunks));
+  });
+}
+
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC;
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE;
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
@@ -196,6 +239,42 @@ function isAuthed(req) {
   return !!queryToken && timingSafeEqualStr(queryToken, AUTH_TOKEN);
 }
 
+const DEVICES_FILE = path.join(__dirname, "known_devices.json");
+let knownDevices = {};
+try {
+  knownDevices = JSON.parse(fs.readFileSync(DEVICES_FILE, "utf8")) || {};
+} catch {
+  knownDevices = {};
+}
+
+function isKnownDevice(req) {
+  const id = getCookie(req, "dev");
+  return !!id && /^[a-f0-9]{32}$/.test(id) && Object.prototype.hasOwnProperty.call(knownDevices, id);
+}
+
+function clientIp(req) {
+  const fwd = req.headers["cf-connecting-ip"] || String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return oneLine(fwd || req.socket.remoteAddress || "inconnue").slice(0, 64);
+}
+
+function registerNewDevice(req) {
+  const id = crypto.randomBytes(16).toString("hex");
+  const ua = oneLine(req.headers["user-agent"] || "inconnu").slice(0, 160);
+  const ip = clientIp(req);
+  knownDevices[id] = { premiereConnexion: new Date().toISOString(), ip, ua };
+  fs.writeFileSync(DEVICES_FILE, JSON.stringify(knownDevices, null, 2), "utf8");
+  logLine(`ALERTE nouvel appareil: ${ip} ${ua}`);
+  sendPushNotification(
+    `Nouvel appareil connecté au pont (${ip}, ${ua.slice(0, 60)}). Si ce n'est pas vous : changez AUTH_TOKEN.`,
+    "Alerte sécurité"
+  ).catch(() => {});
+  return id;
+}
+
+function isAuthedDevice(req) {
+  return isAuthed(req) && isKnownDevice(req);
+}
+
 function isLoopback(req) {
   const addr = req.socket.remoteAddress;
   return addr === "127.0.0.1" || addr === "::1" || addr === "::ffff:127.0.0.1";
@@ -290,14 +369,13 @@ const httpServer = http.createServer((req, res) => {
   }
 
   if (req.method === "POST" && req.url === "/push/subscribe") {
-    if (!isAuthed(req)) {
+    if (!isAuthedDevice(req)) {
       res.writeHead(401);
       res.end("Non autorise");
       return;
     }
-    let body = "";
-    req.on("data", (chunk) => { body += chunk; });
-    req.on("end", () => {
+    readBody(req, res, MAX_JSON_BODY, (buf) => {
+      const body = buf.toString("utf8");
       let payload;
       try {
         payload = JSON.parse(body);
@@ -329,14 +407,13 @@ const httpServer = http.createServer((req, res) => {
   }
 
   if (req.method === "POST" && req.url === "/push/unsubscribe") {
-    if (!isAuthed(req)) {
+    if (!isAuthedDevice(req)) {
       res.writeHead(401);
       res.end("Non autorise");
       return;
     }
-    let body = "";
-    req.on("data", (chunk) => { body += chunk; });
-    req.on("end", () => {
+    readBody(req, res, MAX_JSON_BODY, (buf) => {
+      const body = buf.toString("utf8");
       let sub;
       try {
         sub = JSON.parse(body);
@@ -370,15 +447,17 @@ const httpServer = http.createServer((req, res) => {
   }
 
   if (req.method === "POST" && req.url === "/transcribe") {
-    if (!isAuthed(req)) {
+    if (!isAuthedDevice(req)) {
       res.writeHead(401);
       res.end("Non autorise");
       return;
     }
-    const chunks = [];
-    req.on("data", (chunk) => chunks.push(chunk));
-    req.on("end", () => {
-      const audio = Buffer.concat(chunks);
+    if (!allowRate("transcribe", 30, 60 * 1000)) {
+      res.writeHead(429);
+      res.end("Trop de requetes");
+      return;
+    }
+    readBody(req, res, MAX_AUDIO_BODY, (audio) => {
 
       const sttReq = http.request({
         host: "127.0.0.1",
@@ -406,14 +485,18 @@ const httpServer = http.createServer((req, res) => {
   }
 
   if (req.method === "POST" && req.url === "/debug") {
-    if (!isAuthed(req)) {
+    if (!isAuthedDevice(req)) {
       res.writeHead(401);
       res.end("Non autorise");
       return;
     }
-    let body = "";
-    req.on("data", (chunk) => { body += chunk; });
-    req.on("end", () => {
+    if (!allowRate("debug", 120, 60 * 1000)) {
+      res.writeHead(429);
+      res.end("Trop de requetes");
+      return;
+    }
+    readBody(req, res, MAX_JSON_BODY, (buf) => {
+      const body = buf.toString("utf8");
       let text;
       try {
         text = JSON.parse(body).text;
@@ -432,8 +515,19 @@ const httpServer = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === "GET" && req.url.split("?")[0] === "/vapid-public") {
+    if (!isAuthedDevice(req) || !VAPID_PUBLIC) {
+      res.writeHead(VAPID_PUBLIC ? 401 : 404);
+      res.end(VAPID_PUBLIC ? "Non autorise" : "VAPID non configure");
+      return;
+    }
+    res.writeHead(200, { "Content-Type": "text/plain", "Cache-Control": "no-store" });
+    res.end(VAPID_PUBLIC);
+    return;
+  }
+
   if (req.method === "GET" && req.url.split("?")[0] === "/projects") {
-    if (!isAuthed(req)) {
+    if (!isAuthedDevice(req)) {
       res.writeHead(401);
       res.end("Non autorise");
       return;
@@ -453,7 +547,7 @@ const httpServer = http.createServer((req, res) => {
   let filePath = url.pathname === "/" ? "/index.html" : url.pathname;
   filePath = path.join(MOBILE_DIR, filePath);
 
-  if (!filePath.startsWith(MOBILE_DIR)) {
+  if (!filePath.startsWith(MOBILE_DIR + path.sep)) {
     res.writeHead(403);
     res.end("Interdit");
     return;
@@ -470,9 +564,14 @@ const httpServer = http.createServer((req, res) => {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
       "Cache-Control": "no-store"
     };
+    const cookies = [];
     if (url.searchParams.get("token")) {
-      headers["Set-Cookie"] = `auth=${AUTH_TOKEN}; HttpOnly; SameSite=Strict; Max-Age=31536000; Path=/`;
+      cookies.push(`auth=${AUTH_TOKEN}; HttpOnly; SameSite=Strict; Max-Age=31536000; Path=/`);
     }
+    if (ext === ".html" && !isKnownDevice(req)) {
+      cookies.push(`dev=${registerNewDevice(req)}; HttpOnly; SameSite=Strict; Max-Age=31536000; Path=/`);
+    }
+    if (cookies.length) headers["Set-Cookie"] = cookies;
     res.writeHead(200, headers);
     res.end(content);
   });
@@ -483,7 +582,17 @@ const wss = new WebSocketServer({
   maxPayload: 12 * 1024 * 1024,
   verifyClient: (info, callback) => {
     const cookieToken = getCookie(info.req, "auth");
-    callback(!!cookieToken && timingSafeEqualStr(cookieToken, AUTH_TOKEN));
+    const authed = !!cookieToken && timingSafeEqualStr(cookieToken, AUTH_TOKEN);
+    if (!authed || !isKnownDevice(info.req)) {
+      callback(false, 401, "Non autorise");
+      return;
+    }
+    if (wss.clients.size >= MAX_WS_CLIENTS) {
+      logLine(`connexion refusee: ${MAX_WS_CLIENTS} clients deja connectes`);
+      callback(false, 503, "Trop de connexions");
+      return;
+    }
+    callback(true);
   }
 });
 
@@ -527,6 +636,19 @@ wss.on("connection", (ws) => {
 
     console.log("Recu:", msg);
 
+    const RATE_RULES = {
+      "client.log": ["log", 120, 60 * 1000],
+      "user.message": ["message", 30, 60 * 1000],
+      "user.validation": ["message", 30, 60 * 1000],
+      "user.image": ["upload", 10, 10 * 60 * 1000],
+      "user.file": ["upload", 10, 10 * 60 * 1000]
+    };
+    const rule = RATE_RULES[msg.type];
+    if (rule && !allowRate(rule[0], rule[1], rule[2])) {
+      logLine(`limite de debit atteinte: ${msg.type}`);
+      return;
+    }
+
     if (msg.type === "client.log") {
       const line = `${new Date().toISOString()}\t[DEBUG] ${oneLine(msg.text)}\n`;
       fs.appendFile(MESSAGES_LOG, line, "utf8", () => {});
@@ -539,7 +661,14 @@ wss.on("connection", (ws) => {
     }
 
     if (msg.type === "client.sleep") {
-      // TODO multi-utilisateurs : reserver au super-jeton proprietaire.
+      if (!ALLOW_REMOTE_SLEEP) {
+        logLine("client.sleep refuse: ALLOW_REMOTE_SLEEP desactive");
+        ws.send(JSON.stringify({
+          type: "assistant.text", project: DEFAULT_PROJECT.id, mid: nextMid(),
+          text: "Mise en veille à distance désactivée sur le PC (ALLOW_REMOTE_SLEEP)."
+        }));
+        return;
+      }
       const now = Date.now();
       if (now - lastSleepRequest < 5000) return;
       lastSleepRequest = now;
@@ -561,7 +690,18 @@ wss.on("connection", (ws) => {
       const channel = msg.channel === "vocal" ? "vocal" : "texte";
       const text = oneLine(msg.text).trim();
       if (!text) return;
-      const line = `${new Date().toISOString()}\t${text}\t[canal:${channel}]\n`;
+      const bang = /^!\s*(\S+)/.exec(text);
+      if (bang && !BANG_ALLOWLIST.includes(bang[1].toLowerCase())) {
+        logLine(`commande refusee (${project.id}): !${bang[1].slice(0, 40)}`);
+        ws.send(JSON.stringify({ type: "message.ack", id: msg.id }));
+        ws.send(JSON.stringify({
+          type: "assistant.text", project: project.id, mid: nextMid(),
+          text: `Commande !${bang[1].slice(0, 40)} refusée par le serveur. Autorisées : ${BANG_ALLOWLIST.map((c) => "!" + c).join(", ")}.`
+        }));
+        ws.send(JSON.stringify({ type: "state", state: "listening" }));
+        return;
+      }
+      const line =`${new Date().toISOString()}\t${text}\t[canal:${channel}]\n`;
 
       fs.appendFile(projectLog(project), line, "utf8", () => {
         ws.send(JSON.stringify({ type: "message.ack", id: msg.id }));
@@ -641,6 +781,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`Serveur HTTP + WebSocket demarre sur le port ${PORT}`);
+httpServer.listen(PORT, BIND_HOST, () => {
+  console.log(`Serveur HTTP + WebSocket demarre sur ${BIND_HOST}:${PORT}`);
 });

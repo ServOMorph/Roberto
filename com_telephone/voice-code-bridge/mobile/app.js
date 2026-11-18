@@ -161,7 +161,11 @@ function setMicRecording() {
 
 const SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
-const VAPID_PUBLIC_KEY = "BGh9SgMiThjIktBHR4dsATPFviTWnxqDQe3nAABxk2ZJUVwa8VxEdiur3pHUUX3pxF4s5aoJgmQsy7U8YpwzSJ0";
+async function fetchVapidPublicKey() {
+  const res = await fetch("/vapid-public", { cache: "no-store" });
+  if (!res.ok) throw new Error(`cle VAPID indisponible (${res.status})`);
+  return (await res.text()).trim();
+}
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -195,13 +199,14 @@ async function enablePushNotifications() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || Notification.permission !== "granted") return;
   try {
     const reg = await navigator.serviceWorker.ready;
+    const vapidKey = await fetchVapidPublicKey();
     const existing = await reg.pushManager.getSubscription();
     if (existing) {
       await existing.unsubscribe();
     }
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      applicationServerKey: urlBase64ToUint8Array(vapidKey)
     });
     await fetch("/push/subscribe", {
       method: "POST",

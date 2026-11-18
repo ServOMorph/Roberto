@@ -6,6 +6,7 @@ Usage CLI :
   python com_manager.py stop [node|stt|tts]     -> arrete le(s) processus via le PID sauvegarde
   python com_manager.py restart [node|stt|tts]  -> stop + start
   python com_manager.py status [node|stt|tts]   -> verifie l'etat du/des processus
+  python com_manager.py lien                    -> ouvre le lien appli dans le Bloc-notes (jamais affiche)
 
 Sans argument de composant : agit sur les 3 processus (node, stt, tts).
 Claude utilise ce script pour gerer l'assistant vocal sans intervention manuelle.
@@ -74,13 +75,24 @@ def _lire_pid(pid_file: Path) -> int | None:
     return None
 
 
-def _lien_appli() -> str | None:
+LIEN_FILE = PID_DIR / "lien_appli.local.txt"
+
+
+def _ecrire_lien_appli() -> bool:
     env = _charger_env()
     token = env.get("AUTH_TOKEN")
     tunnel_url = env.get("TUNNEL_URL")
     if not token or not tunnel_url:
-        return None
-    return f"https://{tunnel_url}/?token={token}"
+        return False
+    LIEN_FILE.write_text(f"https://{tunnel_url}/?token={token}\n", encoding="utf-8")
+    return True
+
+
+def cmd_lien() -> str:
+    if not _ecrire_lien_appli():
+        return "[ATTENTION] AUTH_TOKEN et/ou TUNNEL_URL absents de .env : lien non genere"
+    subprocess.Popen(["notepad.exe", str(LIEN_FILE)])
+    return "[OK] Lien appli ouvert dans le Bloc-notes (non affiche ici)"
 
 
 def cmd_status(name: str) -> str:
@@ -113,11 +125,10 @@ def cmd_start(name: str) -> str:
             msg = f"[KO] {name} n'a pas demarre"
 
     if name == "node" and msg.startswith("[OK]"):
-        lien = _lien_appli()
-        if lien:
-            msg += f"\nLien appli : {lien}"
+        if _ecrire_lien_appli():
+            msg += "\nLien appli : non affiche (securite). L'ouvrir avec : com_manager.py lien"
         else:
-            msg += "\n[ATTENTION] AUTH_TOKEN et/ou TUNNEL_URL absents de .env : lien non affiche"
+            msg += "\n[ATTENTION] AUTH_TOKEN et/ou TUNNEL_URL absents de .env : lien non genere"
     return msg
 
 
@@ -155,8 +166,12 @@ if __name__ == "__main__":
     action = sys.argv[1] if len(sys.argv) > 1 else "start"
     component = sys.argv[2] if len(sys.argv) > 2 else None
 
+    if action == "lien":
+        print(cmd_lien())
+        sys.exit(0)
+
     if action not in ACTIONS:
-        print(f"Action inconnue : {action}. Utilise : start | stop | restart | status")
+        print(f"Action inconnue : {action}. Utilise : start | stop | restart | status | lien")
         sys.exit(1)
 
     names = [component] if component else list(PROCESSES.keys())

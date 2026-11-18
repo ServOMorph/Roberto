@@ -80,7 +80,8 @@ Si `projects.json` est perdu, recréer l'entrée :
 2. Session Roberto : `/roberto` (pont démarré, Roberto à l'écoute).
 3. Session VibeObs : `/relais_telephone` (VibeObs à l'écoute de son onglet).
 4. Dans chaque session à joindre en voiture : `/telephone roberto`, puis choisir son mode
-   d'autorisation avant de partir. Les demandes d'autorisation du logiciel ne se valident qu'au PC.
+   d'autorisation avant de partir, autre que `auto` (un message dicté peut venir de quiconque
+   détient le lien). Les demandes d'autorisation du logiciel ne se valident qu'au PC.
    Une session déjà arrêtée sur une question ou une autorisation doit d'abord recevoir votre réponse.
 5. Téléphone : ouvrir l'appli, onglet VibeObs, dire « point » pour vérifier que le relais répond.
 6. Retour au PC : `/telephone off` dans chaque session passée en mode roberto, et
@@ -107,10 +108,27 @@ conversationnel : `!<nom>` (ex. `!close`, `!start`) signifie appliquer la procé
 terminal — le reste du message après `!<nom>` fait office d'arguments. Si `<nom>` ne correspond à
 aucun fichier commande existant, le signaler par `POST /send` plutôt que de deviner une intention.
 
-Autorisation permanente actée le 2026-08-26 : les actions git (commit/push) prévues par une
-procédure ainsi déclenchée s'exécutent sans confirmation terminal supplémentaire — le fait d'envoyer
-`!<commande>` depuis le téléphone vaut confirmation. Le résultat (bilan de fin de procédure) doit
-quand même être renvoyé sur le téléphone via `POST /send`, conformément à la règle des deux canaux.
+Liste blanche (2026-11-18, audit `_docs/audit_securite_2026-11-17.md`) : le serveur refuse toute
+commande `!` absente de `BANG_ALLOWLIST` (`.env`, défaut `close,start`) et répond « Commande
+refusée » au téléphone sans rien écrire dans le log.
+
+Depuis le téléphone, une procédure peut committer sans confirmation terminal, mais **jamais
+pousser** : le `git push` (et toute action destructive ou irréversible) attend une validation
+au PC. Ceci remplace l'autorisation permanente du 2026-08-26. Le bilan de fin de procédure est
+renvoyé sur le téléphone via `POST /send`, conformément à la règle des deux canaux.
+
+## Sécurité du pont (2026-11-18)
+- Le serveur Node n'écoute que `127.0.0.1` (`BIND_HOST` dans `.env` pour changer).
+- Chaque navigateur reçoit un cookie d'appareil `dev` au chargement de la page. Un nouvel appareil
+  déclenche une notification « Alerte sécurité » et une ligne `ALERTE` dans `messages.log`.
+  Liste : `server/known_devices.json` (gitignoré). Supprimer une entrée révoque l'appareil.
+- Mise en veille du PC à distance désactivée sauf `ALLOW_REMOTE_SLEEP=1` dans `.env`.
+- Limites : 5 connexions WebSocket, 30 messages/min, 10 envois image ou fichier par 10 min,
+  corps de requête plafonnés.
+- `com_manager.py start` n'affiche plus le token. `com_manager.py lien` ouvre le lien complet
+  dans le Bloc-notes (fichier `_commands/lien_appli.local.txt`, gitignoré).
+- La clé VAPID publique est servie par `/vapid-public` : régénérer les clés ne demande plus de
+  modifier `app.js`.
 
 ## Style des réponses (POST /send)
 L'utilisateur écoute la réponse (TTS), il ne la lit pas. Chaque message envoyé via `POST /send`
@@ -152,5 +170,6 @@ Liste de ce qui y a été ajouté à cause de ROBERTO :
   absolue" ci-dessus) — la règle seule dans ce README n'a pas suffi.
 
 ## État
-Fonctionnel de bout en bout, testé en conditions réelles (iPhone/Safari). Pas d'authentification sur
-l'UI à ce stade — ne pas exposer durablement sans en ajouter une.
+Fonctionnel de bout en bout, testé en conditions réelles (iPhone/Safari). Authentification par
+token (`AUTH_TOKEN`) et cookie d'appareil ; durcissement du 2026-11-18 décrit dans « Sécurité du
+pont ». Reste recommandé : une authentification au niveau du tunnel, configurée par l'utilisateur.

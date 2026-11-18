@@ -42,8 +42,10 @@ ne pas proposer de le démarrer à sa place.
       ```
       py -3.11 "D:\ServOMorph\Roberto\com_telephone\_commands\com_manager.py" start
       ```
-   3. Relancer `status`, puis donner à l'utilisateur la ligne `Lien appli : ...` affichée par
-      `start` (10 à 20 secondes de chargement des modèles avant que le serveur soit utilisable).
+   3. Relancer `status`. Le lien appli n'est plus affiché : dire à l'utilisateur qu'il l'ouvre
+      lui-même avec `py -3.11 com_telephone/_commands/com_manager.py lien` (Bloc-notes). Ne
+      jamais lire `lien_appli.local.txt` ni `.env`. Compter 10 à 20 secondes de chargement des
+      modèles avant que le serveur soit utilisable.
    Le tunnel reste à lancer par l'utilisateur.
 
 2. Se fier au fichier de verrou, jamais à la mémoire de la conversation :
@@ -67,7 +69,7 @@ ne pas proposer de le démarrer à sa place.
    2. Session Roberto : `/roberto` (pont démarré, Roberto à l'écoute).
    3. Session VibeObs : `/relais_telephone` (VibeObs à l'écoute de son onglet).
    4. Dans chaque session à joindre en voiture : `/telephone roberto`, puis choisir son mode
-      d'autorisation avant de partir. Les demandes d'autorisation du logiciel ne se valident qu'au
+      d'autorisation avant de partir, autre que `auto`. Les demandes d'autorisation du logiciel ne se valident qu'au
       PC. Une session déjà arrêtée sur une question ou une autorisation doit d'abord recevoir la
       réponse de l'utilisateur.
    5. Téléphone : ouvrir l'appli, onglet VibeObs, dire « point » pour vérifier que le relais répond.
@@ -81,4 +83,6 @@ ne pas proposer de le démarrer à sa place.
 Tout message dans `messages_roberto.log` (ligne sans `[DEBUG]`) → réponse via
 `POST http://127.0.0.1:5000/send`, corps JSON avec les clés `text` (non vide) et
 `project` (`"roberto"`) — pas `message`, pas `body`. Sans `text` valide : HTTP 400. Un message
-commençant par `!` est une commande directe : appliquer `.claude/commands/<nom>.md` de ce projet.
+commençant par `!` est une commande directe : appliquer `.claude/commands/<nom>.md` de ce projet
+(le serveur ne laisse passer que la liste blanche `BANG_ALLOWLIST`). Depuis le téléphone : commit
+permis, `git push` et toute action destructive ou irréversible attendent une validation au PC.
