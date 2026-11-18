@@ -119,9 +119,12 @@ renvoyé sur le téléphone via `POST /send`, conformément à la règle des deu
 
 ## Sécurité du pont (2026-11-18)
 - Le serveur Node n'écoute que `127.0.0.1` (`BIND_HOST` dans `.env` pour changer).
-- Chaque navigateur reçoit un cookie d'appareil `dev` au chargement de la page. Un nouvel appareil
-  déclenche une notification « Alerte sécurité » et une ligne `ALERTE` dans `messages.log`.
-  Liste : `server/known_devices.json` (gitignoré). Supprimer une entrée révoque l'appareil.
+- **Appairage du premier appareil** : le premier navigateur qui ouvre le lien reçoit un cookie
+  d'appareil `dev` et verrouille le pont. Ensuite, tout autre appareil est refusé (403), même avec
+  le bon lien ; le refus est écrit dans `messages.log` (`ALERTE`) et notifié. Le lien n'a donc plus
+  besoin d'être changé. Liste : `server/known_devices.json` (gitignoré). Pour changer de téléphone
+  ou révoquer l'appareil : supprimer ce fichier au PC (pris en compte sans redémarrer), puis ouvrir
+  le lien depuis le nouvel appareil. Ouvrir le lien soi-même en premier après chaque suppression.
 - Mise en veille du PC à distance désactivée sauf `ALLOW_REMOTE_SLEEP=1` dans `.env`.
 - Limites : 5 connexions WebSocket, 30 messages/min, 10 envois image ou fichier par 10 min,
   corps de requête plafonnés.

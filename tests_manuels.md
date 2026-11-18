@@ -82,8 +82,9 @@ lancé par l'utilisateur, `/roberto`.
    lien. La sortie de `start` n'affiche plus le token.
 2. **Tunnel et écoute locale** : le serveur n'écoute plus que `127.0.0.1`. Ouvrir le nouveau lien
    sur le téléphone → l'appli se charge. Sinon, ajouter `BIND_HOST=0.0.0.0` dans `.env`.
-3. **Nouvel appareil** : au premier chargement, une ligne `ALERTE nouvel appareil` apparaît dans
-   `server/messages.log`. Ouvrir le lien depuis un second navigateur → notification « Alerte
+3. **Appairage** : supprimer `server/known_devices.json`, ouvrir le lien sur le téléphone en
+   premier → ligne `APPAIRAGE` dans `server/messages.log`. Ouvrir ensuite le même lien depuis le
+   navigateur du PC → « Appareil non appaire » (403), ligne `ALERTE` et notification « Alerte
    sécurité » reçue sur le téléphone.
 4. **Notifications** (nouvelles clés VAPID) : rouvrir l'appli depuis l'icône, notifications
    autorisées → `POST /push/test` en local → notification reçue.

@@ -241,15 +241,33 @@ function isAuthed(req) {
 
 const DEVICES_FILE = path.join(__dirname, "known_devices.json");
 let knownDevices = {};
-try {
-  knownDevices = JSON.parse(fs.readFileSync(DEVICES_FILE, "utf8")) || {};
-} catch {
-  knownDevices = {};
+let devicesMtime = -1;
+function loadDevices() {
+  let mtime = 0;
+  try {
+    mtime = fs.statSync(DEVICES_FILE).mtimeMs;
+  } catch {
+    mtime = 0;
+  }
+  if (mtime === devicesMtime) return;
+  devicesMtime = mtime;
+  try {
+    knownDevices = JSON.parse(fs.readFileSync(DEVICES_FILE, "utf8")) || {};
+  } catch {
+    knownDevices = {};
+  }
 }
+loadDevices();
 
 function isKnownDevice(req) {
+  loadDevices();
   const id = getCookie(req, "dev");
   return !!id && /^[a-f0-9]{32}$/.test(id) && Object.prototype.hasOwnProperty.call(knownDevices, id);
+}
+
+function pairingLocked() {
+  loadDevices();
+  return Object.keys(knownDevices).length > 0;
 }
 
 function clientIp(req) {
@@ -263,12 +281,21 @@ function registerNewDevice(req) {
   const ip = clientIp(req);
   knownDevices[id] = { premiereConnexion: new Date().toISOString(), ip, ua };
   fs.writeFileSync(DEVICES_FILE, JSON.stringify(knownDevices, null, 2), "utf8");
-  logLine(`ALERTE nouvel appareil: ${ip} ${ua}`);
-  sendPushNotification(
-    `Nouvel appareil connecté au pont (${ip}, ${ua.slice(0, 60)}). Si ce n'est pas vous : changez AUTH_TOKEN.`,
-    "Alerte sécurité"
-  ).catch(() => {});
+  devicesMtime = -1;
+  logLine(`APPAIRAGE appareil enregistre (le pont est maintenant verrouille): ${ip} ${ua}`);
   return id;
+}
+
+function reportRefusedDevice(req) {
+  const ua = oneLine(req.headers["user-agent"] || "inconnu").slice(0, 160);
+  const ip = clientIp(req);
+  logLine(`ALERTE appareil non appaire refuse: ${ip} ${ua}`);
+  if (allowRate("refus-push", 3, 10 * 60 * 1000)) {
+    sendPushNotification(
+      `Tentative de connexion refusée (${ip}, ${ua.slice(0, 60)}). Quelqu'un a peut-être votre lien : changez AUTH_TOKEN.`,
+      "Alerte sécurité"
+    ).catch(() => {});
+  }
 }
 
 function isAuthedDevice(req) {
@@ -564,6 +591,12 @@ const httpServer = http.createServer((req, res) => {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
       "Cache-Control": "no-store"
     };
+    if (ext === ".html" && !isKnownDevice(req) && pairingLocked()) {
+      reportRefusedDevice(req);
+      res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Appareil non appaire");
+      return;
+    }
     const cookies = [];
     if (url.searchParams.get("token")) {
       cookies.push(`auth=${AUTH_TOKEN}; HttpOnly; SameSite=Strict; Max-Age=31536000; Path=/`);

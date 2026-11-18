@@ -39,9 +39,10 @@ dépendances npm. Le tunnel est hors périmètre (lancé et configuré par l'uti
 - **Token masqué** : `start` n'affiche plus le lien. `com_manager.py lien` l'ouvre dans le
   Bloc-notes, via le fichier gitignoré `_commands/lien_appli.local.txt`.
 - **Écoute locale** : Node écoute sur `127.0.0.1`.
-- **Cookie d'appareil** : `dev`, liste dans `known_devices.json`. Il est exigé pour le WebSocket et
-  les points d'accès de l'API. Un nouvel appareil déclenche une notification push et une ligne
-  `ALERTE` dans le log.
+- **Appairage du premier appareil** : cookie `dev`, liste dans `known_devices.json`, exigé pour le
+  WebSocket et l'API. Le premier appareil verrouille le pont : tout autre appareil est refusé (403)
+  même avec le bon lien, avec ligne `ALERTE` dans le log et notification push. Révocation :
+  supprimer le fichier. Limite : le premier arrivé gagne, donc ouvrir le lien soi-même en premier.
 - **Limites** : 5 connexions WebSocket, 30 messages par minute, 10 envois de fichiers par 10 minutes,
   corps de requête plafonnés (64 Ko pour le JSON, 10 Mo pour l'audio).
 - **Clés VAPID** : régénérées. La clé publique est désormais servie par `/vapid-public`.
