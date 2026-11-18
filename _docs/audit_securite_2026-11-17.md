@@ -26,7 +26,7 @@ dépendances npm. Le tunnel est hors périmètre (lancé et configuré par l'uti
 | Moyen | Mise en veille du PC par tout client connecté. | Corrigé (désactivée sauf `ALLOW_REMOTE_SLEEP=1`) |
 | Moyen | Aucune limite de connexions, de débit ni de taille. | Corrigé |
 | Moyen | Aucune alerte en cas de nouvel appareil. | Corrigé |
-| Moyen | Contenu des réponses visible dans les notifications sur l'écran verrouillé. | Ouvert (mesure 9) |
+| Moyen | Contenu des réponses visible dans les notifications sur l'écran verrouillé. | Corrigé (`NOTIF_SHOW_CONTENT=1` pour le rétablir) |
 | Faible | Pas de contrôle d'`Origin` sur le WebSocket, pas de CSP, contrôle de chemin sans séparateur final. | Séparateur final corrigé. Le reste est ouvert. |
 | Faible | Logs et historique du chat (`localStorage`) en clair. | Ouvert |
 
@@ -56,5 +56,4 @@ dépendances npm. Le tunnel est hors périmètre (lancé et configuré par l'uti
    (`.claude/settings.json`) : à arbitrer, car le relais vocal y fait des appels Bash.
 3. Mesure 4 : appairage à usage unique, cookie d'appareil seul valable 30 jours, attribut `Secure`,
    token retiré de l'URL.
-4. Mesure 9 : notifications discrètes (« Nouveau message » sans contenu).
-5. Contrôle d'`Origin` sur le WebSocket, en-tête CSP.
+4. Contrôle d'`Origin` sur le WebSocket, en-tête CSP.

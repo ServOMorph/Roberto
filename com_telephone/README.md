@@ -125,6 +125,8 @@ renvoyé sur le téléphone via `POST /send`, conformément à la règle des deu
   besoin d'être changé. Liste : `server/known_devices.json` (gitignoré). Pour changer de téléphone
   ou révoquer l'appareil : supprimer ce fichier au PC (pris en compte sans redémarrer), puis ouvrir
   le lien depuis le nouvel appareil. Ouvrir le lien soi-même en premier après chaque suppression.
+- Notifications discrètes : « Nouveau message » sans contenu (`NOTIF_SHOW_CONTENT=1` dans `.env`
+  pour afficher le texte). Les alertes de sécurité gardent leur texte.
 - Mise en veille du PC à distance désactivée sauf `ALLOW_REMOTE_SLEEP=1` dans `.env`.
 - Limites : 5 connexions WebSocket, 30 messages/min, 10 envois image ou fichier par 10 min,
   corps de requête plafonnés.

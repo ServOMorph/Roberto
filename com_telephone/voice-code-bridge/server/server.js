@@ -57,6 +57,7 @@ if (!AUTH_TOKEN) {
 }
 
 const BIND_HOST = process.env.BIND_HOST || "127.0.0.1";
+const NOTIF_SHOW_CONTENT = process.env.NOTIF_SHOW_CONTENT === "1";
 const ALLOW_REMOTE_SLEEP = process.env.ALLOW_REMOTE_SLEEP === "1";
 const BANG_ALLOWLIST = (process.env.BANG_ALLOWLIST || "close,start")
   .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
@@ -164,7 +165,7 @@ function broadcastAndNotify(project, payload) {
       mid, text: payload.text, audio: payload.audio || null, mime: payload.mime || null,
       awaitValidation: payload.awaitValidation, options: payload.options, recommended: payload.recommended
     });
-    sendPushNotification(payload.text, `${project.label} · Assistant`).catch(() => {});
+    sendPushNotification(NOTIF_SHOW_CONTENT ? payload.text : "Nouveau message", `${project.label} · Assistant`).catch(() => {});
   }
   return { sent, push: !foreground };
 }
