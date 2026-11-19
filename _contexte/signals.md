@@ -1,4 +1,4 @@
-# Signals — roberto   (MAJ 2026-11-17)
+# Signals — roberto   (MAJ 2026-11-19)
 
 ## Actions ouvertes
 - [P1|ouvert] Nuit réelle du planificateur (déclenchée le 2026-09-04 à 21h00) : tâche `audit-deps`
@@ -76,18 +76,21 @@
   exit 1). Écart connu à corriger en Phase 1 des améliorations Roberto. fait quand: le script est
   ajouté et exécuté avec succès, ou la procédure `/close` est corrigée pour ce dépôt. réf:
   .claude/commands/close.md, scripts/check_kit.py
-- [P1|ouvert] Valider en réel les notifications push, téléphone verrouillé, après re-souscription
-  de la PWA. fait quand: l'utilisateur confirme réception fiable sur écran verrouillé (5 envois
-  sur 5) et aucun doublon. réf: tests_manuels.md, com_telephone/voice-code-bridge/server/server.js
-  (broadcastAndNotify, anyClientForeground), mobile/app.js (client.visible, seenMids, deviceId)
+- [P1|ouvert] Valider en réel les notifications push, téléphone verrouillé. Changé le 2026-11-18 :
+  clés VAPID régénérées (la PWA doit se réabonner, ouvrir l'appli depuis l'icône et accepter) et
+  contenu des notifications masqué (« Nouveau message », `NOTIF_SHOW_CONTENT=1` pour le rétablir).
+  fait quand: l'utilisateur confirme réception fiable sur écran verrouillé (5 envois sur 5), sans
+  doublon, après réabonnement. réf: tests_manuels.md, com_telephone/voice-code-bridge/server/server.js
+  (broadcastAndNotify, anyClientForeground), mobile/app.js
 - [P2|ouvert] Décider S4 de l'audit : le TTS passe par edge_tts (cloud Microsoft) en premier,
   Piper en secours ; le README affirme l'inverse. fait quand: décision actée + code et README
   alignés (Piper par défaut, ou README corrigé). réf: com_telephone/_docs/audit_securite_2026-08-28.md
   (S4), com_telephone/voice-code-bridge/server/tts_server.py
-- [P3|ouvert] Traiter S5, S7, S8 de l'audit (check anti-traversée statique sans séparateur ;
-  cycle de vie du token : cookie 1 an, token imprimé par com_manager, rotation non documentée ;
-  divers, dont `client.sleep` à réserver au super-jeton). fait quand: chaque constat corrigé ou
-  explicitement écarté. réf: com_telephone/_docs/audit_securite_2026-08-28.md
+- [P3|ouvert] S7 de l'audit du 2026-08-28 (cycle de vie du token) : reste le cookie d'un an et
+  l'absence de `Secure` ; S5 (séparateur du contrôle de chemin) et S8 (`client.sleep`, désactivé par
+  défaut) corrigés le 2026-11-18, le token n'est plus affiché par `com_manager.py`. fait quand: cookie
+  raccourci et `Secure` posé, ou écartés explicitement. réf:
+  com_telephone/_docs/audit_securite_2026-08-28.md, _docs/audit_securite_2026-11-17.md
 - [P3|ouvert] Décider la proposition des 3 agents de dev (Bridge / PWA / Déploiement-Ops).
   fait quand: validée (agent_role.md créés) ou rejetée. réf:
   com_telephone/_docs/agents_dev_proposition.md
@@ -96,58 +99,64 @@
   3 correctifs (`routes_orga.py`) sans aucun suivi de zone. fait quand: décision actée (zone créée
   et `/start` fonctionnel dessus, ou traitement ad hoc confirmé durablement). réf: session du
   2026-09-05, `.claude/zones.md`
-- [P2|ouvert] Relais entre sessions Claude locales : l'utilisateur poursuit le chantier dans la
-  session VibeObs (`c371ea`), qui tient Roberto informé. Établi : relais Roberto-VibeObs via
-  `ListAgents`/`SendMessage` testé dans les deux sens. Avis de VibeObs, non tranché formellement :
-  VibeObs recueille et trie, Roberto reste l'interface vocale ; préalables cités : file persistante
-  sur disque, nouveau cas de droits au registre des prises de contrôle de VibeObs. Non établi :
-  lire l'écran d'une session. fait quand: architecture actée par l'utilisateur et un test sans
-  risque (2 sessions inactives interrogées, une synthèse relue en voiture) réussi. réf:
-  `_contexte/memory.md`, `D:\ServOMorph\VibeObs\DOCUMENTATION\30_decisions\prises_de_controle.md`
-- [P2|ouvert] Valider en réel le raccordement de VibeObs au pont (commit `df08ff1`, non poussé) :
-  l'entrée `vibeobs` de `projects.json` (ignoré par git, à recréer si perdu) n'a jamais été lue par
-  un pont démarré ; le démarrage automatique de `/roberto` (port 5000 libéré seulement si
-  `node.exe`) n'a jamais été exécuté. Le tunnel est toujours lancé par l'utilisateur, jamais par
-  Claude. Revient en partie sur la décision du 2026-09-13. fait quand: pont démarré via `/roberto`,
-  onglet VibeObs visible dans l'appli, aller-retour avec la session VibeObs réussi, puis push
-  décidé. réf: `.claude/commands/roberto.md`, `com_telephone/README.md`,
-  `com_telephone/DEPLOYMENTS.md`
-- [P2|ouvert] Accents perdus dans les messages envoyés au téléphone : `curl` sous Windows
-  convertit les arguments en page de codes locale, le serveur reçoit du non-UTF-8 (U+FFFD constaté
-  dans `messages_roberto.log`). Contourné par `com_telephone/_commands/send_message.py` (UTF-8),
-  validé à l'oreille par l'utilisateur le 2026-11-17. Reste : l'exemple `curl` du README
-  com_telephone, `send_message.py` non commité, règle non mémorisée (`/roberto` relu : aucun
-  exemple `curl`) ; hypothèse non vérifiée : les autres sessions répondant via `curl` ont le même
-  défaut.
-  fait quand: README et `/roberto` pointent vers `send_message.py`, le script est commité, la règle
-  est inscrite en mémoire. réf: `com_telephone/_commands/send_message.py`,
-  `com_telephone/README.md`, `.claude/commands/roberto.md`
+- [P2|ouvert] Relais entre sessions Claude locales : en service via la session VibeObs
+  (`/relais_telephone`), l'utilisateur lui parle par l'onglet VibeObs. Côté pont, faits le 2026-11-19
+  à sa demande : accusé et bip immédiats, regroupement des fragments vocaux (4 s), alerte « n'a pas
+  répondu » (60 s), silence de coupure 1,8 s et durée maximale 90 s, plus une seule voix. Restent :
+  micro fermé pendant la réponse vocale (parole perdue), surveillance de VibeObs probablement limitée
+  à 30 min, architecture non actée formellement (file persistante sur disque, cas de droits au
+  registre des prises de contrôle de VibeObs). fait quand: architecture actée par l'utilisateur et un
+  trajet réel en voiture réussi sans phrase coupée ni voix changeante. réf: `_contexte/memory.md`,
+  com_telephone/README.md (messages vocaux, découpage de la voix), VibeObs/DOCUMENTATION/30_decisions/prises_de_controle.md
+- [P2|ouvert] Accents perdus dans les messages envoyés au téléphone par `curl` (Windows, page de
+  codes locale). `send_message.py` (UTF-8) est commité (`0f1d4c7`) et `/roberto` ne cite plus `curl`.
+  Reste : l'exemple `curl` de la section « choix rapides » du README com_telephone (ligne 176).
+  fait quand: cet exemple utilise `send_message.py` (ou précise l'UTF-8) et la règle est inscrite en
+  mémoire. réf: `com_telephone/README.md`, `com_telephone/_commands/send_message.py`
+- [P1|ouvert] Tests réels du durcissement et du vocal sur l'iPhone : lien reçu par Gmail et appairage
+  (le 1er appareil qui ouvre le lien verrouille le pont ; WhatsApp l'avait pris par son aperçu), bip
+  « reçu », silence 1,8 s / 90 s, une seule voix, alerte « n'a pas répondu », liste blanche `!`.
+  Ancienne variable Windows `AUTH_TOKEN` supprimée le 2026-11-19. fait quand: les 6 contrôles de la
+  section « Durcissement du pont » de `tests_manuels.md` sont passés et supprimés. réf:
+  tests_manuels.md, _docs/audit_securite_2026-11-17.md
+- [P2|ouvert] Protection si le lien fuit, sessions jointes en `auto` (choix de l'utilisateur) :
+  authentification devant le tunnel (à configurer par l'utilisateur seul, jamais par Claude) ;
+  appairage à usage unique avec token retiré de l'URL (mesure 4 de l'audit). fait quand: auth du
+  tunnel active et décision prise sur la mesure 4. réf: _docs/audit_securite_2026-11-17.md
+- [P2|ouvert] Incohérence Astra / `gpt-6.1-sol` : `AGENTS.md` (commit `7d522a2`, par VibeObs) impose
+  `gpt-6.1-sol` pour Codex, jamais `astra`, alors que `/refacto_projet`, le README, `contexte.md` et
+  le CHANGELOG citent encore `gpt-6-astra`. Question posée à l'utilisateur, sans réponse. fait quand:
+  décision prise et `/refacto_projet` aligné, ou l'écart écarté. réf:
+  .claude/commands/refacto_projet.md, AGENTS.md
+- Backlog : 1 entrée (amélioration 1) — `_contexte/backlog.md`
 
 ## Dernière session
 <!-- Écrasé intégralement par /close. Synthèse < 25 lignes. -->
-# Session du 2026-11-17
+# Session du 2026-11-19
 
 ## Décisions prises
-- Un message de l'utilisateur reçu du téléphone vaut confirmation (garde-fou : action destructive ou
-  irréversible), inscrit dans `_contexte/memory.md` ; envois vers le téléphone via `send_message.py`.
-- VibeObs est raccordé au pont com_telephone ; `/roberto` démarre le pont si besoin ; le tunnel est
-  lancé par l'utilisateur seul, jamais par Claude.
-- L'utilisateur poursuit le chantier de relais entre sessions dans la session VibeObs.
+- Audit de sécurité du pont : push et actions destructives depuis le téléphone réservés au PC (mémoire
+  de zone), liste blanche `!` (close, start), sessions jointes en voiture restent en `auto`.
+- Le pont se verrouille sur le 1er appareil appairé ; Safari et l'icône iOS acceptés 10 min.
+- Notifications discrètes ; clés VAPID régénérées ; ancien `AUTH_TOKEN` Windows supprimé.
+- Un Monitor expire après 30 min au plus : `/roberto` relance l'écoute à chaque expiration.
+- Demandes de VibeObs traitées : accusé, regroupement, alerte, silence 1,8 s / 90 s, une seule voix.
 
 ## Livrables produits ou modifiés
-- `_contexte/memory.md` : créé ; `.claude/commands/roberto.md`, `com_telephone/DEPLOYMENTS.md`,
-  `com_telephone/README.md` : modifiés (commit `df08ff1`, non poussé) ; `projects.json` : entrée
-  `vibeobs` (ignoré par git).
-- Bridge arrêté, Monitors arrêtés et verrous supprimés en fin de session.
+- `server.js`, `tts_server.py`, `mobile/app.js`, `com_manager.py` : durcissement, voix, appairage.
+- `roberto.md`, `com_telephone/README.md`, `_docs/audit_securite_2026-11-17.md`, `tests_manuels.md`,
+  `_contexte/memory.md` : documentation. Commits `0f1d4c7`, `f32e172` à `c10e454`, poussés à la clôture.
+- Pont et surveillance arrêtés en fin de session.
 
 ## Hypothèses validées / invalidées
-- VALIDE : relais Roberto-VibeObs via `ListAgents`/`SendMessage`, dans les deux sens.
-- INVALIDE : le TTS ne gère pas les accents -> cause : envoi par `curl` (non-UTF-8).
-- EN ATTENTE : raccordement VibeObs jamais exécuté sur un pont démarré ; architecture non actée.
+- VALIDE : raccordement VibeObs sur un pont démarré par `/roberto` ; relance automatique du Monitor ;
+  les 15 contrôles d'intégration du pont (serveur de test).
+- INVALIDE : WhatsApp ne convient pas pour envoyer le lien (son aperçu appaire à la place de l'iPhone).
+- EN ATTENTE : cause des phrases coupées et de la voix variable (correctifs non testés sur iPhone) ;
+  réabonnement push.
 
 ## Prochaine étape exacte
-Arbitrer les 3 roadmaps `[EN COURS]` (P1), puis valider en réel le raccordement VibeObs (pont via
-`/roberto`, tunnel lancé par l'utilisateur).
+Lancer le tunnel puis `/roberto`, dérouler les tests réels (action P1) ; trancher Astra / `gpt-6.1-sol`.
 
 ## Question bloquante pour la session suivante
-Quelle architecture l'utilisateur retient-il pour le relais (VibeObs gère, Roberto relaie) ?
+Faut-il remplacer Astra par `gpt-6.1-sol` dans `/refacto_projet`, le README, `contexte.md` et le CHANGELOG ?

@@ -7,21 +7,13 @@ Copie réorganisée de claude-vibecoding-kit, réalisée étape par étape.
 Markdown, Python (ollama_call.py), templates de commandes Claude Code
 
 ## État actuel (réécrit intégralement à chaque /close)
-Roberto conserve son **bridge com_tel** (Node 5000, STT 5001, TTS 5002), raccordé à VibeObs (non
-validé en réel) ; `/roberto` démarre le pont, le tunnel reste lancé par l'utilisateur. Relais vers
-les sessions Claude locales (`ListAgents`/`SendMessage`) testé avec VibeObs, suite pilotée depuis sa
-session ; envoi vers le téléphone via `send_message.py`. Planificateur nocturne : Phase 3 ; revue
-nocturne : Phase 1 ; `/refacto_projet` : plan et roadmap non destructifs dans Codex/Astra.
+Roberto conserve son **bridge com_tel** (Node 5000, STT 5001, TTS 5002), raccordé à VibeObs (relais des
+sessions en service) et durci le 2026-11-19 : appairage du 1er appareil, liste blanche `!`, écoute locale,
+notifications discrètes, voix unique, vocal regroupé. Pont arrêté en fin de session ; `/roberto` le
+démarre et relance l'écoute toutes les 30 min, le tunnel reste lancé par l'utilisateur. Planificateur
+nocturne : Phase 3 ; revue nocturne : Phase 1 ; `/refacto_projet` : plan et roadmap non destructifs.
 
 ## Décisions structurantes (append only — 10 entrées max, 5 lignes max/entrée, archiver au-delà)
-- 2026-08-28 : Audit sécurité (`_docs/audit_securite_2026-08-28.md`). Corrigés : `/send` et
-  `/push/test` refusent les requêtes proxifiées (S1), nettoyage `\r\n\t` des textes journalisés
-  (S2), extension image assainie + limites de taille + maxPayload WS (S3/S6).
-- 2026-09-04 : Planificateur nocturne (`PLANIFICATEUR/`) : exécute des tâches `claude -p`
-  `--restricted` la nuit, confinées par une allowlist de dossiers, butoir 06:00, retry aveugle
-  sur la limite 5 h, rapport HTML (charte VERTIA) + push com_tel. Le confinement repose sur le
-  harness (`--restricted` + `--allowedTools` + `--disallowedTools`), jamais sur `CLAUDE.md`.
-  Un run avec outils refusés est un échec ; une tâche interrompue n'est pas rejouée.
 - 2026-09-04 : Overlays plein écran ajoutés au planificateur (`overlay.py`) : annonce au
   lancement, bilan à la fin, désactivables via `--no-overlay`. Validés visuellement par
   l'utilisateur.
@@ -55,3 +47,10 @@ nocturne : Phase 1 ; `/refacto_projet` : plan et roadmap non destructifs dans Co
   `DEPLOYMENTS.md`), ce qui revient en partie sur l'entrée du 2026-09-13 ; `/roberto` démarre le pont
   si besoin (port 5000 libéré seulement si `node.exe`). Le tunnel est lancé par l'utilisateur seul,
   jamais par Claude. Procédure : `com_telephone/README.md`, section « Relais des sessions par VibeObs ».
+- 2026-11-19 : Audit de sécurité du pont (`_docs/audit_securite_2026-11-17.md`) : sessions jointes en
+  `auto` (choix de l'utilisateur) ; depuis le téléphone, commit permis mais push et actions destructives
+  attendent le PC (remplace l'autorisation du 2026-08-26) ; liste blanche `!` ; le 1er appareil appairé
+  verrouille le pont ; tunnel laissé à l'utilisateur. Détail : `_contexte/memory.md`.
+- 2026-11-19 : Un Monitor expire après 30 min au plus (plafond de l'outil) : `/roberto` relance l'écoute à
+  chaque expiration. Vocal : accusé, regroupement 4 s, alerte 60 s, silence 1,8 s, durée maximale 90 s,
+  une seule voix (demandes de VibeObs, non testées sur iPhone).

@@ -1,3 +1,15 @@
+## v0.15 — 2026-11-19
+
+### Modifié
+- `com_telephone` : durcissement suite à l'audit du 2026-11-17 (`_docs/audit_securite_2026-11-17.md`) :
+  liste blanche des commandes `!`, appairage du premier appareil (secondaire 10 min), écoute locale,
+  limites de débit, `client.sleep` désactivé par défaut, token masqué (`com_manager.py lien`), clés
+  VAPID servies par le serveur, notifications discrètes.
+- `com_telephone` : accusé et bip « reçu », regroupement des fragments vocaux, alerte sans réponse,
+  silence 1,8 s et durée maximale 90 s, retry edge-tts et repli Piper journalisé, fin de la voix système iOS.
+- `.claude/commands/roberto.md` : relance automatique de la surveillance toutes les 30 minutes.
+- `com_telephone/_commands/send_message.py` : versionné.
+
 ## v0.14 — 2026-11-17
 
 ### Modifié

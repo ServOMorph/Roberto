@@ -29,3 +29,12 @@ Décisions déplacées ici par `/close` quand la liste de `contexte.md` dépasse
   (nouvelle source de vérité pour les futurs déploiements).
 - 2026-08-25 : com_manager.py affiche le lien appli (token) au démarrage et démarre tout par
   défaut sans argument — nécessite TUNNEL_URL dans .env en plus d'AUTH_TOKEN.
+
+- 2026-08-28 : Audit sécurité (`_docs/audit_securite_2026-08-28.md`). Corrigés : `/send` et
+  `/push/test` refusent les requêtes proxifiées (S1), nettoyage `\r\n\t` des textes journalisés
+  (S2), extension image assainie + limites de taille + maxPayload WS (S3/S6).
+- 2026-09-04 : Planificateur nocturne (`PLANIFICATEUR/`) : exécute des tâches `claude -p`
+  `--restricted` la nuit, confinées par une allowlist de dossiers, butoir 06:00, retry aveugle
+  sur la limite 5 h, rapport HTML (charte VERTIA) + push com_tel. Le confinement repose sur le
+  harness (`--restricted` + `--allowedTools` + `--disallowedTools`), jamais sur `CLAUDE.md`.
+  Un run avec outils refusés est un échec ; une tâche interrompue n'est pas rejouée.

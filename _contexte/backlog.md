@@ -1,0 +1,1 @@
+- [amélioration] Durcissement du WebSocket du pont : contrôle d'`Origin`, en-tête CSP, logs et historique du chat (`localStorage`) en clair. fait quand: contrôle d'`Origin` et CSP posés, ou écartés. réf: com_telephone/voice-code-bridge/server/server.js

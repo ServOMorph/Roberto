@@ -111,3 +111,31 @@ Puis décider S4 (Piper par défaut ou README corrigé).
 
 ## Question bloquante pour la session suivante
 Aucune
+
+---
+# Session du 2026-11-17
+
+## Décisions prises
+- Un message de l'utilisateur reçu du téléphone vaut confirmation (garde-fou : action destructive ou
+  irréversible), inscrit dans `_contexte/memory.md` ; envois vers le téléphone via `send_message.py`.
+- VibeObs est raccordé au pont com_telephone ; `/roberto` démarre le pont si besoin ; le tunnel est
+  lancé par l'utilisateur seul, jamais par Claude.
+- L'utilisateur poursuit le chantier de relais entre sessions dans la session VibeObs.
+
+## Livrables produits ou modifiés
+- `_contexte/memory.md` : créé ; `.claude/commands/roberto.md`, `com_telephone/DEPLOYMENTS.md`,
+  `com_telephone/README.md` : modifiés (commit `df08ff1`, non poussé) ; `projects.json` : entrée
+  `vibeobs` (ignoré par git).
+- Bridge arrêté, Monitors arrêtés et verrous supprimés en fin de session.
+
+## Hypothèses validées / invalidées
+- VALIDE : relais Roberto-VibeObs via `ListAgents`/`SendMessage`, dans les deux sens.
+- INVALIDE : le TTS ne gère pas les accents -> cause : envoi par `curl` (non-UTF-8).
+- EN ATTENTE : raccordement VibeObs jamais exécuté sur un pont démarré ; architecture non actée.
+
+## Prochaine étape exacte
+Arbitrer les 3 roadmaps `[EN COURS]` (P1), puis valider en réel le raccordement VibeObs (pont via
+`/roberto`, tunnel lancé par l'utilisateur).
+
+## Question bloquante pour la session suivante
+Quelle architecture l'utilisateur retient-il pour le relais (VibeObs gère, Roberto relaie) ?
