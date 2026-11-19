@@ -140,6 +140,11 @@ renvoyé sur le téléphone via `POST /send`, conformément à la règle des deu
   (`SILENCE_MS`) ou 90 s au plus (`MAX_DURATION_MS`), constantes de `mobile/app.js`. Avant, 0,9 s et
   15 s coupaient les phrases en plein milieu ; après chaque envoi le micro reste fermé jusqu'à la fin
   de la réponse vocale (`disarmMic`), donc la parole pendant ce temps est perdue.
+- Voix (2026-11-19) : les réponses sont synthétisées par edge-tts (Denise). Si edge-tts échoue deux
+  fois de suite, le serveur bascule sur Piper (autre voix) et l'écrit dans
+  `server/logs/tts_fallback.log` ; l'en-tête `X-TTS-Engine` indique le moteur. L'appli ne prononce
+  plus « Compris, j'envoie à Titi » avec la voix système de l'iPhone (autre voix) : le bip « reçu »
+  le remplace.
 - Mise en veille du PC à distance désactivée sauf `ALLOW_REMOTE_SLEEP=1` dans `.env`.
 - Limites : 5 connexions WebSocket, 30 messages/min, 10 envois image ou fichier par 10 min,
   corps de requête plafonnés.

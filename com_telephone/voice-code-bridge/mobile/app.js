@@ -818,16 +818,7 @@ function confirmAndSend(transcript) {
     disarmMic();
   };
 
-  if (window.speechSynthesis) {
-    const utterance = new SpeechSynthesisUtterance("Compris, j'envoie à Titi");
-    utterance.lang = "fr-FR";
-    utterance.onend = finish;
-    utterance.onerror = finish;
-    window.speechSynthesis.speak(utterance);
-    setTimeout(finish, 3500);
-  } else {
-    setTimeout(finish, 800);
-  }
+  setTimeout(finish, 300);
 }
 
 const WHISPER_HALLUCINATIONS = [
