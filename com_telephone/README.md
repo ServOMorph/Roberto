@@ -136,6 +136,10 @@ renvoyé sur le téléphone via `POST /send`, conformément à la règle des deu
   défaut, 15 s au plus) en une seule ligne du log, puis alerte « <projet> n'a pas répondu »
   (texte, plus notification si l'appli est en arrière-plan) après `REPLY_ALERT_MS` (60 s ;
   0 pour désactiver) sans réponse `/send`. Valable pour tous les projets, l'onglet VibeObs inclus.
+- Découpage de la voix (2026-11-19) : l'appli coupe une prise de parole après 1,8 s de silence
+  (`SILENCE_MS`) ou 90 s au plus (`MAX_DURATION_MS`), constantes de `mobile/app.js`. Avant, 0,9 s et
+  15 s coupaient les phrases en plein milieu ; après chaque envoi le micro reste fermé jusqu'à la fin
+  de la réponse vocale (`disarmMic`), donc la parole pendant ce temps est perdue.
 - Mise en veille du PC à distance désactivée sauf `ALLOW_REMOTE_SLEEP=1` dans `.env`.
 - Limites : 5 connexions WebSocket, 30 messages/min, 10 envois image ou fichier par 10 min,
   corps de requête plafonnés.

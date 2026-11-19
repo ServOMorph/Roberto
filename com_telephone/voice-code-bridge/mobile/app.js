@@ -278,8 +278,8 @@ function unlockAudioElement() {
 }
 
 const SPEECH_THRESHOLD = 0.02;
-const SILENCE_MS = 900;
-const MAX_DURATION_MS = 15000;
+const SILENCE_MS = 1800;
+const MAX_DURATION_MS = 90000;
 
 function wsUrl() {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
