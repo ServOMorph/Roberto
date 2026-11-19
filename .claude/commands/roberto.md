@@ -54,9 +54,16 @@ ne pas proposer de le démarrer à sa place.
    2. Lancer un nouveau Monitor :
       ```
       command: tail -f --retry -n 0 "D:/ServOMorph/Roberto/com_telephone/voice-code-bridge/server/logs/messages_roberto.log"
-      persistent: true
+      timeout_ms: 1800000
       ```
    3. Écrire le `task_id` retourné dans `monitor_roberto.lock` (écrasant tout contenu précédent).
+
+   Relance automatique : un Monitor expire au plus tard après 30 minutes (plafond de l'outil). À
+   chaque avis « Monitor expired » concernant `messages_roberto.log`, relancer aussitôt les étapes
+   2.1 à 2.3 sans attendre l'utilisateur, puis lire les lignes du log datées des 2 dernières minutes
+   (horodatage ISO en début de ligne) pour récupérer les messages arrivés pendant la relance.
+   Ne répondre qu'à ceux qui n'ont pas déjà été traités dans la conversation. Si le pont est
+   arrêté (`status` en `[KO]`), ne pas relancer l'écoute et le dire à l'utilisateur.
 
 3. Confirmer à l'utilisateur que Roberto est en écoute (préciser : sélectionner `Roberto` dans
    l'appli téléphone).

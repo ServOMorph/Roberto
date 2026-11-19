@@ -89,6 +89,10 @@ Si `projects.json` est perdu, recréer l'entrée :
 7. Après un redémarrage du PC : tout est perdu (pont, écoutes, sessions) et se relance à la main
    depuis l'étape 1.
 
+**Durée d'écoute.** L'outil de surveillance d'une session expire après 30 minutes au plus (plafond
+de l'outil, non modifiable). `/roberto` relance donc l'écoute à chaque expiration et relit les
+messages des 2 dernières minutes. Le pont lui-même n'a pas de délai d'inactivité.
+
 **Dépannage**
 - Rien ne répond : relancer `/roberto`, puis `/relais_telephone`.
 - Onglet VibeObs absent : vérifier l'entrée dans `projects.json`, puis
