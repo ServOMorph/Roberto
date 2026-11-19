@@ -540,6 +540,8 @@ function connect() {
       addBubble("assistant", msg.text);
       showValidationButtons(!!msg.awaitValidation);
       showChoiceButtons(msg.options, msg.recommended);
+    } else if (msg.type === "signal" && msg.kind === "recu") {
+      playReceivedBeep();
     } else if (msg.type === "assistant.audio") {
       if (msg.project) markProjectConnected(msg.project);
       if (isHomeView()) return;
@@ -547,6 +549,29 @@ function connect() {
       playAssistantAudio(msg.audio, msg.mime);
     }
   };
+}
+
+let beepCtx = null;
+function playReceivedBeep() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    beepCtx = beepCtx || new Ctx();
+    if (beepCtx.state === "suspended") beepCtx.resume();
+    const osc = beepCtx.createOscillator();
+    const gain = beepCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.0001, beepCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, beepCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, beepCtx.currentTime + 0.12);
+    osc.connect(gain);
+    gain.connect(beepCtx.destination);
+    osc.start();
+    osc.stop(beepCtx.currentTime + 0.13);
+  } catch (err) {
+    debugLog(`bip impossible: ${err.message}`);
+  }
 }
 
 function playAssistantAudio(base64, mime) {

@@ -131,6 +131,11 @@ renvoyé sur le téléphone via `POST /send`, conformément à la règle des deu
   le lien depuis le nouvel appareil. Ouvrir le lien soi-même en premier après chaque suppression.
 - Notifications discrètes : « Nouveau message » sans contenu (`NOTIF_SHOW_CONTENT=1` dans `.env`
   pour afficher le texte). Les alertes de sécurité gardent leur texte.
+- Messages vocaux (2026-11-19) : accusé immédiat (`message.ack` + bip « reçu » dans l'appli),
+  regroupement des fragments d'une même prise de parole (silence de `VOCAL_GROUP_MS`, 4 s par
+  défaut, 15 s au plus) en une seule ligne du log, puis alerte « <projet> n'a pas répondu »
+  (texte, plus notification si l'appli est en arrière-plan) après `REPLY_ALERT_MS` (60 s ;
+  0 pour désactiver) sans réponse `/send`. Valable pour tous les projets, l'onglet VibeObs inclus.
 - Mise en veille du PC à distance désactivée sauf `ALLOW_REMOTE_SLEEP=1` dans `.env`.
 - Limites : 5 connexions WebSocket, 30 messages/min, 10 envois image ou fichier par 10 min,
   corps de requête plafonnés.

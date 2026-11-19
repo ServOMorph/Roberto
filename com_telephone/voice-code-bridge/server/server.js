@@ -64,6 +64,45 @@ const BANG_ALLOWLIST = (process.env.BANG_ALLOWLIST || "close,start")
 const MAX_WS_CLIENTS = 5;
 const MAX_JSON_BODY = 64 * 1024;
 const MAX_AUDIO_BODY = 10 * 1024 * 1024;
+const VOCAL_GROUP_MS = Number(process.env.VOCAL_GROUP_MS || 4000);
+const VOCAL_GROUP_MAX_MS = 15000;
+const REPLY_ALERT_MS = Number(process.env.REPLY_ALERT_MS || 60000);
+
+const vocalBuffers = new Map();
+const replyWatches = new Map();
+
+function startReplyWatch(project) {
+  if (!REPLY_ALERT_MS) return;
+  clearTimeout(replyWatches.get(project.id));
+  replyWatches.set(project.id, setTimeout(() => {
+    replyWatches.delete(project.id);
+    logLine(`ALERTE ${project.label} sans reponse depuis ${Math.round(REPLY_ALERT_MS / 1000)} s`);
+    broadcastAndNotify(project, { text: `${project.label} n'a pas répondu.` });
+  }, REPLY_ALERT_MS));
+}
+
+function writeUserLine(project, text, channel) {
+  fs.appendFile(projectLog(project), `${new Date().toISOString()}\t${text}\t[canal:${channel}]\n`, "utf8", () => {});
+  startReplyWatch(project);
+}
+
+function flushVocal(project) {
+  const buf = vocalBuffers.get(project.id);
+  if (!buf) return;
+  clearTimeout(buf.timer);
+  vocalBuffers.delete(project.id);
+  const text = buf.parts.join(" ").replace(/\s+/g, " ").trim();
+  if (text) writeUserLine(project, text, "vocal");
+}
+
+function bufferVocal(project, text) {
+  const buf = vocalBuffers.get(project.id) || { parts: [], firstAt: Date.now(), timer: null };
+  buf.parts.push(text);
+  clearTimeout(buf.timer);
+  const remaining = Math.max(0, VOCAL_GROUP_MAX_MS - (Date.now() - buf.firstAt));
+  buf.timer = setTimeout(() => flushVocal(project), Math.min(VOCAL_GROUP_MS, remaining));
+  vocalBuffers.set(project.id, buf);
+}
 
 const rateBuckets = new Map();
 function allowRate(key, limit, windowMs) {
@@ -138,6 +177,8 @@ function anyClientForeground() {
 }
 
 function broadcastAndNotify(project, payload) {
+  clearTimeout(replyWatches.get(project.id));
+  replyWatches.delete(project.id);
   const mid = nextMid();
   const textMsg = JSON.stringify({
     type: "assistant.text", project: project.id, mid, text: payload.text,
@@ -754,12 +795,17 @@ wss.on("connection", (ws) => {
         ws.send(JSON.stringify({ type: "state", state: "listening" }));
         return;
       }
-      const line =`${new Date().toISOString()}\t${text}\t[canal:${channel}]\n`;
-
-      fs.appendFile(projectLog(project), line, "utf8", () => {
+      if (channel === "vocal" && VOCAL_GROUP_MS > 0) {
         ws.send(JSON.stringify({ type: "message.ack", id: msg.id }));
-      });
+        ws.send(JSON.stringify({ type: "signal", kind: "recu", project: project.id }));
+        bufferVocal(project, text);
+        ws.send(JSON.stringify({ type: "state", state: "processing" }));
+        return;
+      }
 
+      flushVocal(project);
+      writeUserLine(project, text, channel);
+      ws.send(JSON.stringify({ type: "message.ack", id: msg.id }));
       ws.send(JSON.stringify({ type: "state", state: "processing" }));
     }
 
