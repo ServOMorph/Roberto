@@ -271,6 +271,25 @@ function pairingLocked() {
   return Object.keys(knownDevices).length > 0;
 }
 
+const SECONDARY_PAIRING_MS = 10 * 60 * 1000;
+const MAX_DEVICES = 3;
+function uaFamily(ua) {
+  return String(ua || "").split("Mobile/")[0].replace(/Version\/[\d.]+/, "").replace(/\s+/g, " ").trim();
+}
+// Safari et l'appli ecran d'accueil iOS ont des cookies separes : un 2e contexte du meme
+// navigateur est accepte pendant 10 min apres l'appairage du premier.
+function canPairSecondary(req) {
+  loadDevices();
+  const entries = Object.values(knownDevices);
+  if (entries.length === 0 || entries.length >= MAX_DEVICES) return false;
+  const ua = uaFamily(req.headers["user-agent"]);
+  if (!ua) return false;
+  const now = Date.now();
+  return entries.some((d) =>
+    now - Date.parse(d.premiereConnexion) < SECONDARY_PAIRING_MS && uaFamily(d.ua) === ua
+  );
+}
+
 function clientIp(req) {
   const fwd = req.headers["cf-connecting-ip"] || String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
   return oneLine(fwd || req.socket.remoteAddress || "inconnue").slice(0, 64);
@@ -283,7 +302,7 @@ function registerNewDevice(req) {
   knownDevices[id] = { premiereConnexion: new Date().toISOString(), ip, ua };
   fs.writeFileSync(DEVICES_FILE, JSON.stringify(knownDevices, null, 2), "utf8");
   devicesMtime = -1;
-  logLine(`APPAIRAGE appareil enregistre (le pont est maintenant verrouille): ${ip} ${ua}`);
+  logLine(`APPAIRAGE appareil enregistre (${Object.keys(knownDevices).length} au total): ${ip} ${ua}`);
   return id;
 }
 
@@ -592,7 +611,7 @@ const httpServer = http.createServer((req, res) => {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
       "Cache-Control": "no-store"
     };
-    if (ext === ".html" && !isKnownDevice(req) && pairingLocked()) {
+    if (ext === ".html" && !isKnownDevice(req) && pairingLocked() && !canPairSecondary(req)) {
       reportRefusedDevice(req);
       res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Appareil non appaire");
